@@ -14,14 +14,14 @@ const getPolyfills = require('../../rn-get-polyfills');
 const path = require('path');
 
 const {createBlacklist} = require('metro');
-const {loadConfig, mergeConfig} = require('metro-config');
+const {loadConfig} = require('metro-config');
 
 /**
  * Configuration file of the CLI.
  */
 import type {ConfigT} from 'metro-config/src/configTypes.flow';
 
-function getProjectPath() {
+function getProjectRoot() {
   if (
     __dirname.match(/node_modules[\/\\]react-native[\/\\]local-cli[\/\\]util$/)
   ) {
@@ -44,12 +44,12 @@ const resolveSymlinksForRoots = roots =>
     [...roots],
   );
 
-const getProjectRoots = () => {
+const getWatchFolders = () => {
   const root = process.env.REACT_NATIVE_APP_ROOT;
   if (root) {
     return resolveSymlinksForRoots([path.resolve(root)]);
   }
-  return resolveSymlinksForRoots([getProjectPath()]);
+  return [];
 };
 
 const getBlacklistRE = () => {
@@ -76,20 +76,19 @@ const Config = {
       ],
       getPolyfills,
     },
-
-    watchFolders: [getProjectPath(), ...getProjectRoots()],
-    transformModulePath: require.resolve('metro/src/reactNativeTransformer'),
+    transformer: {
+      babelTransformerPath: require.resolve('metro/src/reactNativeTransformer'),
+    },
+    watchFolders: getWatchFolders(),
   },
 
-  getProjectPath,
-  getProjectRoots,
-
   async load(configFile: ?string): Promise<ConfigT> {
-    const config: ConfigT = await loadConfig(
-      configFile ? {config: configFile} : {},
-    );
+    const argv = {cwd: getProjectRoot()};
 
-    return mergeConfig(config, this.DEFAULT);
+    return await loadConfig(
+      configFile ? {...argv, config: configFile} : argv,
+      this.DEFAULT,
+    );
   },
 };
 

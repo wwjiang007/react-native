@@ -5,16 +5,12 @@
 
 package com.facebook.react.uimanager;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.support.v4.view.AccessibilityDelegateCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.accessibility.AccessibilityNodeInfoCompat;
 import android.view.View;
-import android.view.accessibility.AccessibilityNodeInfo;
 import com.facebook.react.R;
-import com.facebook.react.bridge.ReadableArray;
 import java.util.Locale;
 import javax.annotation.Nullable;
 
@@ -23,7 +19,7 @@ import javax.annotation.Nullable;
  * AccessibilityNodeInfo.
  */
 
-public class AccessibilityRoleUtil {
+public class AccessibilityDelegateUtil {
 
   /**
    * These roles are defined by Google's TalkBack screen reader, and this list should be kept up to
@@ -41,7 +37,9 @@ public class AccessibilityRoleUtil {
     IMAGEBUTTON("android.widget.ImageView"),
     KEYBOARDKEY("android.inputmethodservice.Keyboard$Key"),
     TEXT("android.widget.ViewGroup"),
-    ADJUSTABLE("android.widget.SeekBar");
+    ADJUSTABLE("android.widget.SeekBar"),
+    SUMMARY("android.widget.ViewGroup"),
+    HEADER("android.widget.ViewGroup");
 
     @Nullable private final String mValue;
 
@@ -56,19 +54,19 @@ public class AccessibilityRoleUtil {
 
     public static AccessibilityRole fromValue(String value) {
       for (AccessibilityRole role : AccessibilityRole.values()) {
-        if (role.getValue() != null && role.getValue().equals(value)) {
+        if (role.name().equalsIgnoreCase(value)) {
           return role;
         }
       }
-      return AccessibilityRole.NONE;
+      throw new IllegalArgumentException("Invalid accessibility role value: " + value);
     }
   }
 
-  private AccessibilityRoleUtil() {
+  private AccessibilityDelegateUtil() {
     // No instances
   }
 
-  public static void setRole(final View view, final AccessibilityRole role) {
+  public static void setDelegate(final View view) {
     // if a view already has an accessibility delegate, replacing it could cause problems,
     // so leave it alone.
     if (!ViewCompat.hasAccessibilityDelegate(view)) {
@@ -79,7 +77,21 @@ public class AccessibilityRoleUtil {
           public void onInitializeAccessibilityNodeInfo(
             View host, AccessibilityNodeInfoCompat info) {
             super.onInitializeAccessibilityNodeInfo(host, info);
-            setRole(info, role, view.getContext());
+            String accessibilityHint = (String) view.getTag(R.id.accessibility_hint);
+            AccessibilityRole accessibilityRole = (AccessibilityRole) view.getTag(R.id.accessibility_role);
+            if (accessibilityRole == null) {
+              accessibilityRole = AccessibilityRole.NONE;
+            }
+            setRole(info, accessibilityRole, view.getContext());
+            if (!(accessibilityHint == null)) {
+              String contentDescription=(String)info.getContentDescription();
+              if (contentDescription != null) {
+                contentDescription = contentDescription + ", " + accessibilityHint;
+                info.setContentDescription(contentDescription);
+              } else {
+                info.setContentDescription(accessibilityHint);
+              }
+            }
           }
         });
     }
@@ -89,7 +101,7 @@ public class AccessibilityRoleUtil {
    * Strings for setting the Role Description in english
    */
 
-  //TODO: Eventually support fot other languages on talkback
+  //TODO: Eventually support for other languages on talkback
 
   public static void setRole(AccessibilityNodeInfoCompat nodeInfo, final AccessibilityRole role, final Context context) {
     nodeInfo.setClassName(role.getValue());
@@ -112,22 +124,6 @@ public class AccessibilityRoleUtil {
     }
     if (role.equals(AccessibilityRole.IMAGEBUTTON)) {
       nodeInfo.setClickable(true);
-    }
-  }
-
-  /**
-   * Method for setting accessibilityRole on view properties.
-   */
-  public static void updateAccessibilityRole(View view, String role) {
-    if (role == null) {
-      view.setAccessibilityDelegate(null);
-    }
-    try {
-      setRole(view, AccessibilityRole.valueOf(role.toUpperCase()));
-    } catch (NullPointerException e) {
-      view.setAccessibilityDelegate(null);
-    } catch (IllegalArgumentException e) {
-      view.setAccessibilityDelegate(null);
     }
   }
 }
