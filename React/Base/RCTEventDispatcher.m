@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -85,11 +85,15 @@ RCT_EXPORT_MODULE()
     RCTAssert([body[@"target"] isKindOfClass:[NSNumber class]],
       @"Event body dictionary must include a 'target' property containing a React tag");
   }
+  
+  if (!body[@"target"]) {
+    return;
+  }
 
   name = RCTNormalizeInputEventName(name);
   [_bridge enqueueJSCall:@"RCTEventEmitter"
                   method:@"receiveEvent"
-                    args:body ? @[body[@"target"], name, body] : @[body[@"target"], name]
+                    args:@[body[@"target"], name, body]
               completion:NULL];
 }
 

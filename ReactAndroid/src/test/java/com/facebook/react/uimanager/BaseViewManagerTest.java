@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,7 @@ package com.facebook.react.uimanager;
 import static org.mockito.Mockito.mock;
 
 import android.content.Context;
-import android.support.v4.view.ViewCompat;
+import androidx.core.view.ViewCompat;
 import com.facebook.react.uimanager.AccessibilityDelegateUtil.AccessibilityRole;
 import com.facebook.react.views.view.ReactViewGroup;
 import com.facebook.react.views.view.ReactViewManager;

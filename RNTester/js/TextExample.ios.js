@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,18 +11,10 @@
 'use strict';
 
 const Platform = require('Platform');
-var React = require('react');
-var createReactClass = require('create-react-class');
-var ReactNative = require('react-native');
-var {
-  Image,
-  Text,
-  TextInput,
-  View,
-  LayoutAnimation,
-  Button,
-  Picker,
-} = ReactNative;
+const React = require('react');
+const ReactNative = require('react-native');
+const {Text, TextInput, View, LayoutAnimation, Button} = ReactNative;
+const TextLegend = require('./Shared/TextLegend');
 
 type TextAlignExampleRTLState = {|
   isRTL: boolean,
@@ -99,7 +91,7 @@ class AttributeToggler extends React.Component<{}, $FlowFixMeState> {
   };
 
   render() {
-    var curStyle = {
+    const curStyle = {
       fontWeight: this.state.fontWeight,
       fontSize: this.state.fontSize,
     };
@@ -129,12 +121,23 @@ class AttributeToggler extends React.Component<{}, $FlowFixMeState> {
   }
 }
 
-var AdjustingFontSize = createReactClass({
-  displayName: 'AdjustingFontSize',
-  getInitialState: function() {
-    return {dynamicText: '', shouldRender: true};
-  },
-  reset: function() {
+type AdjustingFontSizeProps = $ReadOnly<{||}>;
+
+type AdjustingFontSizeState = {|
+  dynamicText: string,
+  shouldRender: boolean,
+|};
+
+class AdjustingFontSize extends React.Component<
+  AdjustingFontSizeProps,
+  AdjustingFontSizeState,
+> {
+  state = {
+    dynamicText: '',
+    shouldRender: true,
+  };
+
+  reset = () => {
     LayoutAnimation.easeInEaseOut();
     this.setState({
       shouldRender: false,
@@ -146,23 +149,26 @@ var AdjustingFontSize = createReactClass({
         shouldRender: true,
       });
     }, 300);
-  },
-  addText: function() {
+  };
+
+  addText = () => {
     this.setState({
       dynamicText:
         this.state.dynamicText +
         (Math.floor((Math.random() * 10) % 2) ? ' foo' : ' bar'),
     });
-  },
-  removeText: function() {
+  };
+
+  removeText = () => {
     this.setState({
       dynamicText: this.state.dynamicText.slice(
         0,
         this.state.dynamicText.length - 4,
       ),
     });
-  },
-  render: function() {
+  };
+
+  render() {
     if (!this.state.shouldRender) {
       return <View />;
     }
@@ -228,13 +234,13 @@ var AdjustingFontSize = createReactClass({
         </View>
       </View>
     );
-  },
-});
+  }
+}
 
 class TextBaseLineLayoutExample extends React.Component<*, *> {
   render() {
-    var texts = [];
-    for (var i = 9; i >= 0; i--) {
+    const texts = [];
+    for (let i = 9; i >= 0; i--) {
       texts.push(
         <Text key={i} style={{fontSize: 8 + i * 5, backgroundColor: '#eee'}}>
           {i}
@@ -407,187 +413,6 @@ class TextWithCapBaseBox extends React.Component<*, *> {
   }
 }
 
-class TextLegend extends React.Component<*, *> {
-  state = {
-    textMetrics: [],
-    language: 'english',
-  };
-
-  render() {
-    const PANGRAMS = {
-      arabic:
-        'صِف خَلقَ خَودِ كَمِثلِ الشَمسِ إِذ بَزَغَت — يَحظى الضَجيعُ بِها نَجلاءَ مِعطارِ',
-      chinese: 'Innovation in China 中国智造，慧及全球 0123456789',
-      english: 'The quick brown fox jumps over the lazy dog.',
-      emoji: '🙏🏾🚗💩😍🤯👩🏽‍🔧🇨🇦💯',
-      german: 'Falsches Üben von Xylophonmusik quält jeden größeren Zwerg',
-      greek: 'Ταχίστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός',
-      hebrew: 'דג סקרן שט בים מאוכזב ולפתע מצא חברה',
-      hindi:
-        'ऋषियों को सताने वाले दुष्ट राक्षसों के राजा रावण का सर्वनाश करने वाले विष्णुवतार भगवान श्रीराम, अयोध्या के महाराज दशरथ के बड़े सपुत्र थे।',
-      igbo:
-        'Nne, nna, wepụ he’l’ụjọ dum n’ime ọzụzụ ụmụ, vufesi obi nye Chukwu, ṅụrịanụ, gbakọọnụ kpaa, kwee ya ka o guzoshie ike; ọ ghaghị ito, nwapụta ezi agwa',
-      irish:
-        'D’fhuascail Íosa Úrmhac na hÓighe Beannaithe pór Éava agus Ádhaimh',
-      japanese:
-        '色は匂へど 散りぬるを 我が世誰ぞ 常ならむ 有為の奥山 今日越えて 浅き夢見じ 酔ひもせず',
-      korean:
-        '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다',
-      norwegian:
-        'Vår sære Zulu fra badeøya spilte jo whist og quickstep i min taxi.',
-      polish: 'Jeżu klątw, spłódź Finom część gry hańb!',
-      romanian: 'Muzicologă în bej vând whisky și tequila, preț fix.',
-      russian: 'Эх, чужак, общий съём цен шляп (юфть) – вдрызг!',
-      swedish: 'Yxskaftbud, ge vår WC-zonmö IQ-hjälp.',
-      thai:
-        'เป็นมนุษย์สุดประเสริฐเลิศคุณค่า กว่าบรรดาฝูงสัตว์เดรัจฉาน จงฝ่าฟันพัฒนาวิชาการ อย่าล้างผลาญฤๅเข่นฆ่าบีฑาใคร ไม่ถือโทษโกรธแช่งซัดฮึดฮัดด่า หัดอภัยเหมือนกีฬาอัชฌาสัย ปฏิบัติประพฤติกฎกำหนดใจ พูดจาให้จ๊ะๆ จ๋าๆ น่าฟังเอยฯ',
-    };
-    return (
-      <View>
-        <Picker
-          selectedValue={this.state.language}
-          onValueChange={itemValue => this.setState({language: itemValue})}>
-          {Object.keys(PANGRAMS).map(x => (
-            <Picker.Item
-              label={x[0].toUpperCase() + x.substring(1)}
-              key={x}
-              value={x}
-            />
-          ))}
-        </Picker>
-        <View>
-          {this.state.textMetrics.map(
-            ({
-              x,
-              y,
-              width,
-              height,
-              capHeight,
-              ascender,
-              descender,
-              xHeight,
-            }) => {
-              return [
-                <View
-                  key="baseline view"
-                  style={{
-                    top: y + ascender,
-                    height: 1,
-                    left: 0,
-                    right: 0,
-                    position: 'absolute',
-                    backgroundColor: 'red',
-                  }}
-                />,
-                <Text
-                  key="baseline text"
-                  style={{
-                    top: y + ascender,
-                    right: 0,
-                    position: 'absolute',
-                    color: 'red',
-                  }}>
-                  Baseline
-                </Text>,
-                <View
-                  key="capheight view"
-                  style={{
-                    top: y + ascender - capHeight,
-                    height: 1,
-                    left: 0,
-                    right: 0,
-                    position: 'absolute',
-                    backgroundColor: 'green',
-                  }}
-                />,
-                <Text
-                  key="capheight text"
-                  style={{
-                    top: y + ascender - capHeight,
-                    right: 0,
-                    position: 'absolute',
-                    color: 'green',
-                  }}>
-                  Capheight
-                </Text>,
-                <View
-                  key="xheight view"
-                  style={{
-                    top: y + ascender - xHeight,
-                    height: 1,
-                    left: 0,
-                    right: 0,
-                    position: 'absolute',
-                    backgroundColor: 'blue',
-                  }}
-                />,
-                <Text
-                  key="xheight text"
-                  style={{
-                    top: y + ascender - xHeight,
-                    right: 0,
-                    position: 'absolute',
-                    color: 'blue',
-                  }}>
-                  X-height
-                </Text>,
-                <View
-                  key="descender view"
-                  style={{
-                    top: y + ascender + descender,
-                    height: 1,
-                    left: 0,
-                    right: 0,
-                    position: 'absolute',
-                    backgroundColor: 'orange',
-                  }}
-                />,
-                <Text
-                  key="descender text"
-                  style={{
-                    top: y + ascender + descender,
-                    right: 0,
-                    position: 'absolute',
-                    color: 'orange',
-                  }}>
-                  Descender
-                </Text>,
-                <View
-                  key="end of text view"
-                  style={{
-                    top: y,
-                    height: height,
-                    width: 1,
-                    left: x + width,
-                    position: 'absolute',
-                    backgroundColor: 'brown',
-                  }}
-                />,
-                <Text
-                  key="end of text text"
-                  style={{
-                    top: y,
-                    left: x + width + 5,
-                    position: 'absolute',
-                    color: 'brown',
-                  }}>
-                  End of text
-                </Text>,
-              ];
-            },
-          )}
-          <Text
-            onTextLayout={event =>
-              this.setState({textMetrics: event.nativeEvent.lines})
-            }
-            style={{fontSize: 50}}>
-            {PANGRAMS[this.state.language]}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-}
 exports.title = '<Text>';
 exports.description = 'Base component for rendering styled text.';
 exports.displayName = 'TextExample';
@@ -599,6 +424,25 @@ exports.examples = [
         <Text>
           The text should wrap if it goes on multiple lines. See, this is going
           to the next line.
+        </Text>
+      );
+    },
+  },
+  {
+    title: "Substring Emoji (should only see 'test')",
+    render: function() {
+      return <Text>{'test🙃'.substring(0, 5)}</Text>;
+    },
+  },
+  {
+    title: 'Transparent Background Color',
+    render: function() {
+      return (
+        <Text style={{backgroundColor: '#00000020', padding: 10}}>
+          Text in a gray box!
+          <Text style={{backgroundColor: 'red'}}>
+            Another text in a (inline) red box (which is inside the gray box).
+          </Text>
         </Text>
       );
     },
@@ -1044,19 +888,22 @@ exports.examples = [
         <View>
           <Text>
             By default, text will respect Text Size accessibility setting on
-            iOS. It means that all font sizes will be increased or descreased
+            iOS. It means that all font sizes will be increased or decreased
             depending on the value of Text Size setting in{' '}
             <Text style={{fontWeight: 'bold'}}>
               Settings.app - Display & Brightness - Text Size
             </Text>
           </Text>
           <Text style={{marginTop: 10}}>
-            You can disable scaling for your Text component by passing {'"'}allowFontScaling={
-              '{'
-            }false{'}"'} prop.
+            You can disable scaling for your Text component by passing {'"'}
+            allowFontScaling={'{'}false{'}"'} prop.
           </Text>
-          <Text allowFontScaling={false} style={{marginTop: 20}}>
-            This text will not scale.
+          <Text allowFontScaling={false} style={{marginTop: 20, fontSize: 15}}>
+            This text will not scale.{' '}
+            <Text style={{fontSize: 15}}>
+              This text also won't scale because it inherits "allowFontScaling"
+              from its parent.
+            </Text>
           </Text>
         </View>
       );

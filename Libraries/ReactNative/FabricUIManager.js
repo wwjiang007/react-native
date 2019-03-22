@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,6 +30,7 @@ type Spec = {|
   +appendChild: (parentNode: Node, child: Node) => Node,
   +appendChildToSet: (childSet: NodeSet, child: Node) => void,
   +completeRoot: (rootTag: number, childSet: NodeSet) => void,
+  +setNativeProps: (node: Node, nativeProps: NodeProps) => void,
 |};
 
 const FabricUIManager: ?Spec = global.nativeFabricUIManager;

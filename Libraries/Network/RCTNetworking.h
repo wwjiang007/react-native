@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,6 +7,7 @@
 
 #import <React/RCTEventEmitter.h>
 #import <React/RCTNetworkTask.h>
+#import <React/RCTURLRequestHandler.h>
 
 @protocol RCTNetworkingRequestHandler <NSObject>
 
@@ -25,6 +26,12 @@
 @end
 
 @interface RCTNetworking : RCTEventEmitter
+
+/**
+ * Allows RCTNetworking instances to be initialized with handlers.
+ * The handlers will be requested via the bridge's moduleForName method when required.
+ */
+- (instancetype)initWithHandlersProvider:(NSArray<id<RCTURLRequestHandler>> * (^)(void))getHandlers;
 
 /**
  * Does a handler exist for the specified request?
