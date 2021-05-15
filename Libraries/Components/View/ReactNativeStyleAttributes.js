@@ -9,20 +9,55 @@
  */
 
 'use strict';
+import DeprecatedImageStylePropTypes from '../../DeprecatedPropTypes/DeprecatedImageStylePropTypes';
+import DeprecatedTextStylePropTypes from '../../DeprecatedPropTypes/DeprecatedTextStylePropTypes';
+import DeprecatedViewStylePropTypes from '../../DeprecatedPropTypes/DeprecatedViewStylePropTypes';
+import processColor from '../../StyleSheet/processColor';
+import processTransform from '../../StyleSheet/processTransform';
+import sizesDiffer from '../../Utilities/differ/sizesDiffer';
 
-const DeprecatedImageStylePropTypes = require('DeprecatedImageStylePropTypes');
-const TextStylePropTypes = require('TextStylePropTypes');
-const DeprecatedViewStylePropTypes = require('DeprecatedViewStylePropTypes');
+type ReturnBoolType = <V>(V) => true;
+type BoolifiedDeprecatedViewStylePropTypes = $ObjMap<
+  typeof DeprecatedViewStylePropTypes,
+  ReturnBoolType,
+>;
+type BoolifiedDeprecatedTextStylePropTypes = $ObjMapi<
+  typeof DeprecatedTextStylePropTypes,
+  ReturnBoolType,
+>;
+type BoolifiedDeprecatedImageStylePropTypes = $ObjMapi<
+  typeof DeprecatedImageStylePropTypes,
+  ReturnBoolType,
+>;
 
-const processColor = require('processColor');
-const processTransform = require('processTransform');
-const sizesDiffer = require('sizesDiffer');
+type StyleAttributesType = {
+  ...BoolifiedDeprecatedViewStylePropTypes,
+  ...BoolifiedDeprecatedTextStylePropTypes,
+  ...BoolifiedDeprecatedImageStylePropTypes,
+  transform: $ReadOnly<{|process: typeof processTransform|}> | true,
+  shadowOffset: $ReadOnly<{|diff: typeof sizesDiffer|}> | true,
+  backgroundColor: typeof colorAttributes | true,
+  borderBottomColor: typeof colorAttributes | true,
+  borderColor: typeof colorAttributes | true,
+  borderLeftColor: typeof colorAttributes | true,
+  borderRightColor: typeof colorAttributes | true,
+  borderTopColor: typeof colorAttributes | true,
+  borderStartColor: typeof colorAttributes | true,
+  borderEndColor: typeof colorAttributes | true,
+  color: typeof colorAttributes | true,
+  shadowColor: typeof colorAttributes | true,
+  textDecorationColor: typeof colorAttributes | true,
+  tintColor: typeof colorAttributes | true,
+  textShadowColor: typeof colorAttributes | true,
+  overlayColor: typeof colorAttributes | true,
+  ...
+};
 
-const ReactNativeStyleAttributes = {};
+const ReactNativeStyleAttributes: StyleAttributesType = {};
 
 for (const attributeName of Object.keys({
   ...DeprecatedViewStylePropTypes,
-  ...TextStylePropTypes,
+  ...DeprecatedTextStylePropTypes,
   ...DeprecatedImageStylePropTypes,
 })) {
   ReactNativeStyleAttributes[attributeName] = true;

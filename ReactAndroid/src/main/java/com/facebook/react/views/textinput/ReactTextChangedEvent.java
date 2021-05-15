@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,14 +7,14 @@
 
 package com.facebook.react.views.textinput;
 
+import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 /**
- * Event emitted by EditText native view when text changes.
- * VisibleForTesting from {@link TextInputEventsTestCase}.
+ * Event emitted by EditText native view when text changes. VisibleForTesting from {@link
+ * TextInputEventsTestCase}.
  */
 public class ReactTextChangedEvent extends Event<ReactTextChangedEvent> {
 
@@ -23,11 +23,13 @@ public class ReactTextChangedEvent extends Event<ReactTextChangedEvent> {
   private String mText;
   private int mEventCount;
 
-  public ReactTextChangedEvent(
-      int viewId,
-      String text,
-      int eventCount) {
-    super(viewId);
+  @Deprecated
+  public ReactTextChangedEvent(int viewId, String text, int eventCount) {
+    this(-1, viewId, text, eventCount);
+  }
+
+  public ReactTextChangedEvent(int surfaceId, int viewId, String text, int eventCount) {
+    super(surfaceId, viewId);
     mText = text;
     mEventCount = eventCount;
   }
@@ -37,12 +39,9 @@ public class ReactTextChangedEvent extends Event<ReactTextChangedEvent> {
     return EVENT_NAME;
   }
 
+  @Nullable
   @Override
-  public void dispatch(RCTEventEmitter rctEventEmitter) {
-    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
-  }
-
-  private WritableMap serializeEventData() {
+  protected WritableMap getEventData() {
     WritableMap eventData = Arguments.createMap();
     eventData.putString("text", mText);
     eventData.putInt("eventCount", mEventCount);

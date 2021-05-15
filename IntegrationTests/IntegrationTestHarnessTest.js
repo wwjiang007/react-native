@@ -10,9 +10,9 @@
 
 'use strict';
 
-const requestAnimationFrame = require('fbjs/lib/requestAnimationFrame');
 const React = require('react');
 const ReactNative = require('react-native');
+
 const {Text, View, StyleSheet} = ReactNative;
 const {TestModule} = ReactNative.NativeModules;
 
@@ -26,7 +26,7 @@ type State = {|
 |};
 
 class IntegrationTestHarnessTest extends React.Component<Props, State> {
-  state = {
+  state: State = {
     done: false,
   };
 
@@ -38,7 +38,7 @@ class IntegrationTestHarnessTest extends React.Component<Props, State> {
     }
   }
 
-  runTest = () => {
+  runTest: () => void = () => {
     if (this.props.shouldThrow) {
       throw new Error('Throwing error because shouldThrow');
     }
@@ -52,13 +52,14 @@ class IntegrationTestHarnessTest extends React.Component<Props, State> {
     });
   };
 
-  render() {
+  render(): React.Node {
     return (
       <View style={styles.container}>
         <Text>
-          {/* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This
-           * comment suppresses an error found when Flow v0.54 was deployed.
-           * To see the error delete this comment and run Flow. */
+          {/* $FlowFixMe[incompatible-type] (>=0.54.0 site=react_native_fb,react_
+           * native_oss) This comment suppresses an error found when Flow v0.54
+           * was deployed. To see the error delete this comment and run Flow.
+           */
           this.constructor.displayName + ': '}
           {this.state.done ? 'Done' : 'Testing...'}
         </Text>

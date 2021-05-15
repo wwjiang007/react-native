@@ -5,23 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow
+ * @flow strict-local
  */
 
-'use strict';
+import * as React from 'react';
 
-const requireNativeComponent = require('requireNativeComponent');
+import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
+import codegenNativeComponent from '../../Utilities/codegenNativeComponent';
+import type {HostComponent} from '../../Renderer/shims/ReactNativeTypes';
 
-import type {ColorValue} from 'StyleSheetTypes';
-import type {ViewProps} from 'ViewPropTypes';
-import type {NativeComponent} from 'ReactNative';
-
-const AndroidSwipeRefreshLayout = require('UIManager').getViewManagerConfig(
-  'AndroidSwipeRefreshLayout',
-);
-const RefreshLayoutConsts = AndroidSwipeRefreshLayout
-  ? AndroidSwipeRefreshLayout.Constants
-  : {SIZE: {}};
+import type {
+  DirectEventHandler,
+  Float,
+  Int32,
+  WithDefault,
+} from '../../Types/CodegenTypes';
+import type {ColorValue} from '../../StyleSheet/StyleSheet';
+import type {ViewProps} from '../View/ViewPropTypes';
 
 type NativeProps = $ReadOnly<{|
   ...ViewProps,
@@ -29,7 +29,7 @@ type NativeProps = $ReadOnly<{|
   /**
    * Whether the pull to refresh functionality is enabled.
    */
-  enabled?: ?boolean,
+  enabled?: WithDefault<boolean, true>,
   /**
    * The colors (at least one) that will be used to draw the refresh indicator.
    */
@@ -39,21 +39,18 @@ type NativeProps = $ReadOnly<{|
    */
   progressBackgroundColor?: ?ColorValue,
   /**
-   * Size of the refresh indicator, see RefreshControl.SIZE.
+   * Size of the refresh indicator.
    */
-  size?: ?(
-    | typeof RefreshLayoutConsts.SIZE.DEFAULT
-    | typeof RefreshLayoutConsts.SIZE.LARGE
-  ),
+  size?: WithDefault<'default' | 'large', 'default'>,
   /**
    * Progress view top offset
    */
-  progressViewOffset?: ?number,
+  progressViewOffset?: WithDefault<Float, 0>,
 
   /**
    * Called when the view starts refreshing.
    */
-  onRefresh?: ?() => mixed,
+  onRefresh?: ?DirectEventHandler<null>,
 
   /**
    * Whether the view should be indicating an active refresh.
@@ -61,8 +58,19 @@ type NativeProps = $ReadOnly<{|
   refreshing: boolean,
 |}>;
 
-type AndroidSwipeRefreshLayoutNativeType = Class<NativeComponent<NativeProps>>;
+type NativeType = HostComponent<NativeProps>;
 
-module.exports = ((requireNativeComponent(
+interface NativeCommands {
+  +setNativeRefreshing: (
+    viewRef: React.ElementRef<NativeType>,
+    value: boolean,
+  ) => void;
+}
+
+export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
+  supportedCommands: ['setNativeRefreshing'],
+});
+
+export default (codegenNativeComponent<NativeProps>(
   'AndroidSwipeRefreshLayout',
-): any): AndroidSwipeRefreshLayoutNativeType);
+): NativeType);

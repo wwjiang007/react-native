@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,11 +8,14 @@
 #import <UIKit/UIKit.h>
 #import <memory>
 
-#import <React/RCTPrimitives.h>
-#import <react/core/ComponentDescriptor.h>
-#import <react/core/LayoutConstraints.h>
-#import <react/core/LayoutContext.h>
-#import <react/mounting/ShadowViewMutation.h>
+#import <react/renderer/componentregistry/ComponentDescriptorFactory.h>
+#import <react/renderer/core/ComponentDescriptor.h>
+#import <react/renderer/core/LayoutConstraints.h>
+#import <react/renderer/core/LayoutContext.h>
+#import <react/renderer/mounting/MountingCoordinator.h>
+#import <react/renderer/scheduler/SchedulerToolbox.h>
+#import <react/renderer/scheduler/SurfaceHandler.h>
+#import <react/utils/ContextContainer.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,10 +26,18 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol RCTSchedulerDelegate
 
-- (void)schedulerDidFinishTransaction:(facebook::react::ShadowViewMutationList)mutations
-                              rootTag:(ReactTag)rootTag;
+- (void)schedulerDidFinishTransaction:(facebook::react::MountingCoordinator::Shared const &)mountingCoordinator;
 
-- (void)schedulerOptimisticallyCreateComponentViewWithComponentHandle:(facebook::react::ComponentHandle)componentHandle;
+- (void)schedulerDidDispatchCommand:(facebook::react::ShadowView const &)shadowView
+                        commandName:(std::string const &)commandName
+                               args:(folly::dynamic const)args;
+
+- (void)schedulerDidSendAccessibilityEvent:(facebook::react::ShadowView const &)shadowView
+                                 eventType:(std::string const &)eventType;
+
+- (void)schedulerDidSetIsJSResponder:(BOOL)isJSResponder
+                blockNativeResponder:(BOOL)blockNativeResponder
+                       forShadowView:(facebook::react::ShadowView const &)shadowView;
 
 @end
 
@@ -37,25 +48,21 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (atomic, weak, nullable) id<RCTSchedulerDelegate> delegate;
 
-- (instancetype)initWithContextContainer:(std::shared_ptr<void>)contextContatiner;
+- (instancetype)initWithToolbox:(facebook::react::SchedulerToolbox)toolbox;
 
-- (void)startSurfaceWithSurfaceId:(facebook::react::SurfaceId)surfaceId
-                       moduleName:(NSString *)moduleName
-                     initialProps:(NSDictionary *)initialProps
-                layoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
-                    layoutContext:(facebook::react::LayoutContext)layoutContext;
+- (void)registerSurface:(facebook::react::SurfaceHandler const &)surfaceHandler;
+- (void)unregisterSurface:(facebook::react::SurfaceHandler const &)surfaceHandler;
 
-- (void)stopSurfaceWithSurfaceId:(facebook::react::SurfaceId)surfaceId;
+- (facebook::react::ComponentDescriptor const *)findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN:
+    (facebook::react::ComponentHandle)handle;
 
-- (CGSize)measureSurfaceWithLayoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
-                                layoutContext:(facebook::react::LayoutContext)layoutContext
-                                    surfaceId:(facebook::react::SurfaceId)surfaceId;
+- (void)setupAnimationDriver:(facebook::react::SurfaceHandler const &)surfaceHandler;
 
-- (void)constraintSurfaceLayoutWithLayoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
-                                       layoutContext:(facebook::react::LayoutContext)layoutContext
-                                           surfaceId:(facebook::react::SurfaceId)surfaceId;
+- (void)onAnimationStarted;
 
-- (const facebook::react::ComponentDescriptor &)getComponentDescriptor:(facebook::react::ComponentHandle)handle;
+- (void)onAllAnimationsComplete;
+
+- (void)animationTick;
 
 @end
 

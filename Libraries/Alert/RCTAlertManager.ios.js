@@ -8,8 +8,17 @@
  * @flow strict-local
  */
 
-'use strict';
+import NativeAlertManager from './NativeAlertManager';
+import type {Args} from './NativeAlertManager';
 
-const RCTAlertManager = require('NativeModules').AlertManager;
-
-module.exports = RCTAlertManager;
+module.exports = {
+  alertWithArgs(
+    args: Args,
+    callback: (id: number, value: string) => void,
+  ): void {
+    if (NativeAlertManager == null) {
+      return;
+    }
+    NativeAlertManager.alertWithArgs(args, callback);
+  },
+};

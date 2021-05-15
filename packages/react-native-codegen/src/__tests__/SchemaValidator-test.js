@@ -11,7 +11,7 @@
 
 'use strict';
 
-const fixtures = require('../generators/__test_fixtures__/fixtures.js');
+const fixtures = require('../generators/components/__test_fixtures__/fixtures.js');
 const schemaValidator = require('../SchemaValidator.js');
 
 import type {SchemaType} from '../CodegenSchema.js';
@@ -30,6 +30,7 @@ describe('SchemaValidator', () => {
     const fixture: SchemaType = {
       modules: {
         Module1: {
+          type: 'Component',
           components: {
             Component1: {
               extendsProps: [
@@ -40,10 +41,12 @@ describe('SchemaValidator', () => {
               ],
               events: [],
               props: [simpleProp],
+              commands: [],
             },
           },
         },
         Module2: {
+          type: 'Component',
           components: {
             Component1: {
               extendsProps: [
@@ -54,28 +57,7 @@ describe('SchemaValidator', () => {
               ],
               events: [],
               props: [simpleProp],
-            },
-          },
-        },
-      },
-    };
-
-    expect(schemaValidator.getErrors(fixture)).toMatchSnapshot();
-  });
-  it('fails on components with no props', () => {
-    const fixture: SchemaType = {
-      modules: {
-        Switch: {
-          components: {
-            BooleanPropNativeComponent: {
-              extendsProps: [
-                {
-                  type: 'ReactNativeBuiltInType',
-                  knownTypeName: 'ReactNativeCoreViewProps',
-                },
-              ],
-              events: [],
-              props: [],
+              commands: [],
             },
           },
         },

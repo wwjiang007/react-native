@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -11,12 +11,12 @@ import com.facebook.react.bridge.JavaOnlyArray;
 import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Native counterpart of transform animated node (see AnimatedTransform class in AnimatedImplementation.js)
+ * Native counterpart of transform animated node (see AnimatedTransform class in
+ * AnimatedImplementation.js)
  */
 /* package */ class TransformAnimatedNode extends AnimatedNode {
 
@@ -70,8 +70,8 @@ import java.util.List;
         } else if (node instanceof ValueAnimatedNode) {
           value = ((ValueAnimatedNode) node).getValue();
         } else {
-          throw new IllegalArgumentException("Unsupported type of node used as a transform child " +
-            "node " + node.getClass());
+          throw new IllegalArgumentException(
+              "Unsupported type of node used as a transform child " + "node " + node.getClass());
         }
       } else {
         value = ((StaticTransformConfig) transformConfig).mValue;
@@ -81,5 +81,13 @@ import java.util.List;
     }
 
     propsMap.putArray("transform", JavaOnlyArray.from(transforms));
+  }
+
+  @Override
+  public String prettyPrint() {
+    return "TransformAnimatedNode["
+        + mTag
+        + "]: mTransformConfigs: "
+        + (mTransformConfigs != null ? mTransformConfigs.toString() : "null");
   }
 }

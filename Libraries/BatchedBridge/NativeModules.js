@@ -5,23 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow
+ * @flow strict
  */
 
 'use strict';
 
-const BatchedBridge = require('BatchedBridge');
+const BatchedBridge = require('./BatchedBridge');
 
 const invariant = require('invariant');
 
-import type {ExtendedError} from 'parseErrorStack';
+import type {ExtendedError} from '../Core/Devtools/parseErrorStack';
 
-type ModuleConfig = [
+export type ModuleConfig = [
   string /* name */,
-  ?Object /* constants */,
-  Array<string> /* functions */,
-  Array<number> /* promise method IDs */,
-  Array<number> /* sync method IDs */,
+  ?{...} /* constants */,
+  ?$ReadOnlyArray<string> /* functions */,
+  ?$ReadOnlyArray<number> /* promise method IDs */,
+  ?$ReadOnlyArray<number> /* sync method IDs */,
 ];
 
 export type MethodType = 'async' | 'promise' | 'sync';
@@ -29,7 +29,11 @@ export type MethodType = 'async' | 'promise' | 'sync';
 function genModule(
   config: ?ModuleConfig,
   moduleID: number,
-): ?{name: string, module?: Object} {
+): ?{
+  name: string,
+  module?: {...},
+  ...
+} {
   if (!config) {
     return null;
   }
@@ -51,8 +55,9 @@ function genModule(
   methods &&
     methods.forEach((methodName, methodID) => {
       const isPromise =
-        promiseMethods && arrayContains(promiseMethods, methodID);
-      const isSync = syncMethods && arrayContains(syncMethods, methodID);
+        (promiseMethods && arrayContains(promiseMethods, methodID)) || false;
+      const isSync =
+        (syncMethods && arrayContains(syncMethods, methodID)) || false;
       invariant(
         !isPromise || !isSync,
         'Cannot have a method that is both async and a sync hook',
@@ -64,7 +69,7 @@ function genModule(
   Object.assign(module, constants);
 
   if (module.getConstants == null) {
-    module.getConstants = () => constants;
+    module.getConstants = () => constants || Object.freeze({});
   } else {
     console.warn(
       `Unable to define method 'getConstants()' on NativeModule '${moduleName}'. NativeModule '${moduleName}' already has a constant or method called 'getConstants'. Please remove it.`,
@@ -81,7 +86,7 @@ function genModule(
 // export this method as a global so we can call it from native
 global.__fbGenNativeModule = genModule;
 
-function loadModule(name: string, moduleID: number): ?Object {
+function loadModule(name: string, moduleID: number): ?{...} {
   invariant(
     global.nativeRequireModuleConfig,
     "Can't lazily create module without nativeRequireModuleConfig",
@@ -94,32 +99,27 @@ function loadModule(name: string, moduleID: number): ?Object {
 function genMethod(moduleID: number, methodID: number, type: MethodType) {
   let fn = null;
   if (type === 'promise') {
-    fn = function(...args: Array<any>) {
+    fn = function promiseMethodWrapper(...args: Array<mixed>) {
+      // In case we reject, capture a useful stack trace here.
+      const enqueueingFrameError: ExtendedError = new Error();
       return new Promise((resolve, reject) => {
         BatchedBridge.enqueueNativeCall(
           moduleID,
           methodID,
           args,
           data => resolve(data),
-          errorData => reject(createErrorFromErrorData(errorData)),
+          errorData =>
+            reject(
+              updateErrorWithErrorData(
+                (errorData: $FlowFixMe),
+                enqueueingFrameError,
+              ),
+            ),
         );
       });
     };
-  } else if (type === 'sync') {
-    fn = function(...args: Array<any>) {
-      if (__DEV__) {
-        invariant(
-          global.nativeCallSyncHook,
-          'Calling synchronous methods on native ' +
-            'modules is not supported in Chrome.\n\n Consider providing alternative ' +
-            'methods to expose this method in debug mode, e.g. by exposing constants ' +
-            'ahead-of-time.',
-        );
-      }
-      return global.nativeCallSyncHook(moduleID, methodID, args);
-    };
   } else {
-    fn = function(...args: Array<any>) {
+    fn = function nonPromiseMethodWrapper(...args: Array<mixed>) {
       const lastArg = args.length > 0 ? args[args.length - 1] : null;
       const secondLastArg = args.length > 1 ? args[args.length - 2] : null;
       const hasSuccessCallback = typeof lastArg === 'function';
@@ -129,35 +129,47 @@ function genMethod(moduleID: number, methodID: number, type: MethodType) {
           hasSuccessCallback,
           'Cannot have a non-function arg after a function arg.',
         );
-      const onSuccess = hasSuccessCallback ? lastArg : null;
-      const onFail = hasErrorCallback ? secondLastArg : null;
+      // $FlowFixMe[incompatible-type]
+      const onSuccess: ?(mixed) => void = hasSuccessCallback ? lastArg : null;
+      // $FlowFixMe[incompatible-type]
+      const onFail: ?(mixed) => void = hasErrorCallback ? secondLastArg : null;
       const callbackCount = hasSuccessCallback + hasErrorCallback;
-      args = args.slice(0, args.length - callbackCount);
-      BatchedBridge.enqueueNativeCall(
-        moduleID,
-        methodID,
-        args,
-        onFail,
-        onSuccess,
-      );
+      const newArgs = args.slice(0, args.length - callbackCount);
+      if (type === 'sync') {
+        return BatchedBridge.callNativeSyncHook(
+          moduleID,
+          methodID,
+          newArgs,
+          onFail,
+          onSuccess,
+        );
+      } else {
+        BatchedBridge.enqueueNativeCall(
+          moduleID,
+          methodID,
+          newArgs,
+          onFail,
+          onSuccess,
+        );
+      }
     };
   }
   fn.type = type;
   return fn;
 }
 
-function arrayContains<T>(array: Array<T>, value: T): boolean {
+function arrayContains<T>(array: $ReadOnlyArray<T>, value: T): boolean {
   return array.indexOf(value) !== -1;
 }
 
-function createErrorFromErrorData(errorData: {message: string}): ExtendedError {
-  const {message, ...extraErrorInfo} = errorData || {};
-  const error: ExtendedError = new Error(message);
-  error.framesToPop = 1;
-  return Object.assign(error, extraErrorInfo);
+function updateErrorWithErrorData(
+  errorData: {message: string, ...},
+  error: ExtendedError,
+): ExtendedError {
+  return Object.assign(error, errorData || {});
 }
 
-let NativeModules: {[moduleName: string]: Object} = {};
+let NativeModules: {[moduleName: string]: $FlowFixMe, ...} = {};
 if (global.nativeModuleProxy) {
   NativeModules = global.nativeModuleProxy;
 } else if (!global.nativeExtensions) {
@@ -167,7 +179,7 @@ if (global.nativeModuleProxy) {
     '__fbBatchedBridgeConfig is not set, cannot invoke native modules',
   );
 
-  const defineLazyObjectProperty = require('defineLazyObjectProperty');
+  const defineLazyObjectProperty = require('../Utilities/defineLazyObjectProperty');
   (bridgeConfig.remoteModuleConfig || []).forEach(
     (config: ModuleConfig, moduleID: number) => {
       // Initially this config will only contain the module name when running in JSC. The actual

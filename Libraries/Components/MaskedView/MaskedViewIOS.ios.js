@@ -8,12 +8,12 @@
  * @flow
  */
 
-const React = require('React');
-const StyleSheet = require('StyleSheet');
-const View = require('View');
-const RCTMaskedViewNativeComponent = require('RCTMaskedViewNativeComponent');
+import * as React from 'react';
+import StyleSheet from '../../StyleSheet/StyleSheet';
+import View from '../View/View';
 
-import type {ViewProps} from 'ViewPropTypes';
+import type {ViewProps} from '../View/ViewPropTypes';
+import RCTMaskedViewNativeComponent from './RCTMaskedViewNativeComponent';
 
 type Props = $ReadOnly<{|
   ...ViewProps,
@@ -65,7 +65,7 @@ type Props = $ReadOnly<{|
 class MaskedViewIOS extends React.Component<Props> {
   _hasWarnedInvalidRenderMask = false;
 
-  render() {
+  render(): React.Node {
     const {maskElement, children, ...otherViewProps} = this.props;
 
     if (!React.isValidElement(maskElement)) {

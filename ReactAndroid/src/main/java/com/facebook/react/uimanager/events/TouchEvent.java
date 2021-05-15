@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,21 +7,19 @@
 
 package com.facebook.react.uimanager.events;
 
-import javax.annotation.Nullable;
-
-import androidx.core.util.Pools;
 import android.view.MotionEvent;
-
+import androidx.annotation.Nullable;
+import androidx.core.util.Pools;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.react.bridge.SoftAssertions;
 
 /**
- * An event representing the start, end or movement of a touch. Corresponds to a single
- * {@link android.view.MotionEvent}.
+ * An event representing the start, end or movement of a touch. Corresponds to a single {@link
+ * android.view.MotionEvent}.
  *
- * TouchEvent coalescing can happen for move events if two move events have the same target view and
- * coalescing key. See {@link TouchEventCoalescingKeyHelper} for more information about how these
- * coalescing keys are determined.
+ * <p>TouchEvent coalescing can happen for move events if two move events have the same target view
+ * and coalescing key. See {@link TouchEventCoalescingKeyHelper} for more information about how
+ * these coalescing keys are determined.
  */
 public class TouchEvent extends Event<TouchEvent> {
 
@@ -32,7 +30,28 @@ public class TouchEvent extends Event<TouchEvent> {
 
   public static final long UNSET = Long.MIN_VALUE;
 
+  @Deprecated
   public static TouchEvent obtain(
+      int viewTag,
+      TouchEventType touchEventType,
+      MotionEvent motionEventToCopy,
+      long gestureStartTime,
+      float viewX,
+      float viewY,
+      TouchEventCoalescingKeyHelper touchEventCoalescingKeyHelper) {
+    return obtain(
+        -1,
+        viewTag,
+        touchEventType,
+        motionEventToCopy,
+        gestureStartTime,
+        viewX,
+        viewY,
+        touchEventCoalescingKeyHelper);
+  }
+
+  public static TouchEvent obtain(
+      int surfaceId,
       int viewTag,
       TouchEventType touchEventType,
       MotionEvent motionEventToCopy,
@@ -45,13 +64,14 @@ public class TouchEvent extends Event<TouchEvent> {
       event = new TouchEvent();
     }
     event.init(
-      viewTag,
-      touchEventType,
-      motionEventToCopy,
-      gestureStartTime,
-      viewX,
-      viewY,
-      touchEventCoalescingKeyHelper);
+        surfaceId,
+        viewTag,
+        touchEventType,
+        motionEventToCopy,
+        gestureStartTime,
+        viewX,
+        viewY,
+        touchEventCoalescingKeyHelper);
     return event;
   }
 
@@ -63,10 +83,10 @@ public class TouchEvent extends Event<TouchEvent> {
   private float mViewX;
   private float mViewY;
 
-  private TouchEvent() {
-  }
+  private TouchEvent() {}
 
   private void init(
+      int surfaceId,
       int viewTag,
       TouchEventType touchEventType,
       MotionEvent motionEventToCopy,
@@ -74,10 +94,10 @@ public class TouchEvent extends Event<TouchEvent> {
       float viewX,
       float viewY,
       TouchEventCoalescingKeyHelper touchEventCoalescingKeyHelper) {
-    super.init(viewTag);
+    super.init(surfaceId, viewTag);
 
-    SoftAssertions.assertCondition(gestureStartTime != UNSET,
-        "Gesture start time must be initialized");
+    SoftAssertions.assertCondition(
+        gestureStartTime != UNSET, "Gesture start time must be initialized");
     short coalescingKey = 0;
     int action = (motionEventToCopy.getAction() & MotionEvent.ACTION_MASK);
     switch (action) {
@@ -92,8 +112,7 @@ public class TouchEvent extends Event<TouchEvent> {
         touchEventCoalescingKeyHelper.incrementCoalescingKey(gestureStartTime);
         break;
       case MotionEvent.ACTION_MOVE:
-        coalescingKey =
-          touchEventCoalescingKeyHelper.getCoalescingKey(gestureStartTime);
+        coalescingKey = touchEventCoalescingKeyHelper.getCoalescingKey(gestureStartTime);
         break;
       case MotionEvent.ACTION_CANCEL:
         touchEventCoalescingKeyHelper.removeCoalescingKey(gestureStartTime);
@@ -147,8 +166,14 @@ public class TouchEvent extends Event<TouchEvent> {
     TouchesHelper.sendTouchEvent(
         rctEventEmitter,
         Assertions.assertNotNull(mTouchEventType),
+        getSurfaceId(),
         getViewTag(),
         this);
+  }
+
+  @Override
+  public void dispatchModern(RCTModernEventEmitter rctEventEmitter) {
+    dispatch(rctEventEmitter);
   }
 
   public MotionEvent getMotionEvent() {

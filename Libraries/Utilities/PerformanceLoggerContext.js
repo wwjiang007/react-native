@@ -4,15 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict
  * @format
  */
 
-'use strict';
-
 import * as React from 'react';
-import GlobalPerformanceLogger from 'GlobalPerformanceLogger';
-import type {IPerformanceLogger} from 'createPerformanceLogger';
+import {useContext} from 'react';
+import GlobalPerformanceLogger from './GlobalPerformanceLogger';
+import type {IPerformanceLogger} from './createPerformanceLogger';
 
 /**
  * This is a React Context that provides a scoped instance of IPerformanceLogger.
@@ -23,4 +22,12 @@ import type {IPerformanceLogger} from 'createPerformanceLogger';
 const PerformanceLoggerContext: React.Context<IPerformanceLogger> = React.createContext(
   GlobalPerformanceLogger,
 );
-module.exports = PerformanceLoggerContext;
+if (__DEV__) {
+  PerformanceLoggerContext.displayName = 'PerformanceLoggerContext';
+}
+
+export function usePerformanceLogger(): IPerformanceLogger {
+  return useContext(PerformanceLoggerContext);
+}
+
+export default PerformanceLoggerContext;

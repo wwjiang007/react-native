@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,14 +7,16 @@
 
 package com.facebook.react.modules.dialog;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.app.Activity;
-
+import androidx.fragment.app.FragmentActivity;
 import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.JavaOnlyMap;
-
+import com.facebook.react.bridge.ReactApplicationContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,20 +25,17 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.util.ActivityController;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.robolectric.android.controller.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 @PowerMockIgnore({"org.mockito.*", "org.robolectric.*", "androidx.*", "android.*"})
 public class DialogModuleTest {
 
-  private ActivityController<Activity> mActivityController;
-  private Activity mActivity;
+  private ActivityController<FragmentActivity> mActivityController;
+  private FragmentActivity mActivity;
   private DialogModule mDialogModule;
 
-  final static class SimpleCallback implements Callback {
+  static final class SimpleCallback implements Callback {
     private Object[] mArgs;
     private int mCalls;
 
@@ -57,15 +56,11 @@ public class DialogModuleTest {
 
   @Before
   public void setUp() throws Exception {
-    mActivityController = Robolectric.buildActivity(Activity.class);
-    mActivity = mActivityController
-        .create()
-        .start()
-        .resume()
-        .get();
+    mActivityController = Robolectric.buildActivity(FragmentActivity.class);
+    mActivity = mActivityController.create().start().resume().get();
 
     final ReactApplicationContext context = PowerMockito.mock(ReactApplicationContext.class);
-    PowerMockito.when(context.hasActiveCatalystInstance()).thenReturn(true);
+    PowerMockito.when(context.hasActiveReactInstance()).thenReturn(true);
     PowerMockito.when(context, "getCurrentActivity").thenReturn(mActivity);
 
     mDialogModule = new DialogModule(context);
@@ -94,7 +89,7 @@ public class DialogModuleTest {
 
     final AlertFragment fragment = getFragment();
     assertNotNull("Fragment was not displayed", fragment);
-    assertEquals(false, fragment.isCancelable());
+    assertFalse(fragment.isCancelable());
 
     final AlertDialog dialog = (AlertDialog) fragment.getDialog();
     assertEquals("OK", dialog.getButton(DialogInterface.BUTTON_POSITIVE).getText().toString());
@@ -164,7 +159,7 @@ public class DialogModuleTest {
   }
 
   private AlertFragment getFragment() {
-    return (AlertFragment) mActivity.getFragmentManager()
-        .findFragmentByTag(DialogModule.FRAGMENT_TAG);
+    return (AlertFragment)
+        mActivity.getSupportFragmentManager().findFragmentByTag(DialogModule.FRAGMENT_TAG);
   }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -30,6 +30,21 @@ import com.facebook.react.bridge.ReadableMap;
   public void update() {
     AnimatedNode toValue = mNativeAnimatedNodesManager.getNodeById(mToValueNode);
     mAnimationConfig.putDouble("toValue", ((ValueAnimatedNode) toValue).getValue());
-    mNativeAnimatedNodesManager.startAnimatingNode(mAnimationId, mValueNode, mAnimationConfig, null);
+    mNativeAnimatedNodesManager.startAnimatingNode(
+        mAnimationId, mValueNode, mAnimationConfig, null);
+  }
+
+  @Override
+  public String prettyPrint() {
+    return "TrackingAnimatedNode["
+        + mTag
+        + "]: animationID: "
+        + mAnimationId
+        + " toValueNode: "
+        + mToValueNode
+        + " valueNode: "
+        + mValueNode
+        + " animationConfig: "
+        + mAnimationConfig;
   }
 }

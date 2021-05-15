@@ -4,42 +4,87 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict-local
  * @format
- * @flow
  */
 
 'use strict';
 
-const MissingNativeEventEmitterShim = require('MissingNativeEventEmitterShim');
-const NativeEventEmitter = require('NativeEventEmitter');
-const RCTNetworkingNative = require('NativeModules').Networking;
-const convertRequestBody = require('convertRequestBody');
+import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';
+import NativeNetworkingIOS from './NativeNetworkingIOS';
+import {type NativeResponseType} from './XMLHttpRequest';
+import convertRequestBody, {type RequestBody} from './convertRequestBody';
+import {type EventSubscription} from '../vendor/emitter/EventEmitter';
 
-import type {RequestBody} from 'convertRequestBody';
+type RCTNetworkingEventDefinitions = $ReadOnly<{
+  didSendNetworkData: [
+    [
+      number, // requestId
+      number, // progress
+      number, // total
+    ],
+  ],
+  didReceiveNetworkResponse: [
+    [
+      number, // requestId
+      number, // status
+      ?{[string]: string}, // responseHeaders
+      ?string, // responseURL
+    ],
+  ],
+  didReceiveNetworkData: [
+    [
+      number, // requestId
+      string, // response
+    ],
+  ],
+  didReceiveNetworkIncrementalData: [
+    [
+      number, // requestId
+      string, // responseText
+      number, // progress
+      number, // total
+    ],
+  ],
+  didReceiveNetworkDataProgress: [
+    [
+      number, // requestId
+      number, // loaded
+      number, // total
+    ],
+  ],
+  didCompleteNetworkResponse: [
+    [
+      number, // requestId
+      string, // error
+      boolean, // timeOutError
+    ],
+  ],
+}>;
 
-import type {NativeResponseType} from './XMLHttpRequest';
-
-class RCTNetworking extends NativeEventEmitter {
-  isAvailable: boolean = true;
-
-  constructor() {
-    super(RCTNetworkingNative);
-  }
+const RCTNetworking = {
+  addListener<K: $Keys<RCTNetworkingEventDefinitions>>(
+    eventType: K,
+    listener: (...$ElementType<RCTNetworkingEventDefinitions, K>) => mixed,
+    context?: mixed,
+  ): EventSubscription {
+    return RCTDeviceEventEmitter.addListener(eventType, listener, context);
+  },
 
   sendRequest(
     method: string,
     trackingName: string,
     url: string,
-    headers: Object,
+    headers: {...},
     data: RequestBody,
     responseType: NativeResponseType,
     incrementalUpdates: boolean,
     timeout: number,
-    callback: (requestId: number) => any,
+    callback: (requestId: number) => void,
     withCredentials: boolean,
   ) {
     const body = convertRequestBody(data);
-    RCTNetworkingNative.sendRequest(
+    NativeNetworkingIOS.sendRequest(
       {
         method,
         url,
@@ -52,42 +97,15 @@ class RCTNetworking extends NativeEventEmitter {
       },
       callback,
     );
-  }
+  },
 
   abortRequest(requestId: number) {
-    RCTNetworkingNative.abortRequest(requestId);
-  }
+    NativeNetworkingIOS.abortRequest(requestId);
+  },
 
-  clearCookies(callback: (result: boolean) => any) {
-    RCTNetworkingNative.clearCookies(callback);
-  }
-}
-
-if (__DEV__ && !RCTNetworkingNative) {
-  class MissingNativeRCTNetworkingShim extends MissingNativeEventEmitterShim {
-    constructor() {
-      super('RCTNetworking', 'Networking');
-    }
-
-    sendRequest(...args: Array<any>) {
-      this.throwMissingNativeModule();
-    }
-
-    abortRequest(...args: Array<any>) {
-      this.throwMissingNativeModule();
-    }
-
-    clearCookies(...args: Array<any>) {
-      this.throwMissingNativeModule();
-    }
-  }
-
-  // This module depends on the native `RCTNetworkingNative` module. If you don't include it,
-  // `RCTNetworking.isAvailable` will return `false`, and any method calls will throw.
-  // We reassign the class variable to keep the autodoc generator happy.
-  RCTNetworking = new MissingNativeRCTNetworkingShim();
-} else {
-  RCTNetworking = new RCTNetworking();
-}
+  clearCookies(callback: (result: boolean) => void) {
+    NativeNetworkingIOS.clearCookies(callback);
+  },
+};
 
 module.exports = RCTNetworking;

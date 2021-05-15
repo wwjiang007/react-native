@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,16 +7,25 @@
 
 package com.facebook.react.uimanager.events;
 
-import javax.annotation.Nullable;
-
+import androidx.annotation.Nullable;
+import com.facebook.proguard.annotations.DoNotStrip;
 import com.facebook.react.bridge.JavaScriptModule;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+/** Deprecated in favor of RCTModernEventEmitter, which extends this interface. */
+@DoNotStrip
+@Deprecated
 public interface RCTEventEmitter extends JavaScriptModule {
+  /**
+   * Deprecated in favor of RCTModernEventEmitter.receiveEvent.
+   *
+   * @param targetTag
+   * @param eventName
+   * @param event
+   */
+  @Deprecated
   void receiveEvent(int targetTag, String eventName, @Nullable WritableMap event);
-  void receiveTouches(
-      String eventName,
-      WritableArray touches,
-      WritableArray changedIndices);
+
+  void receiveTouches(String eventName, WritableArray touches, WritableArray changedIndices);
 }

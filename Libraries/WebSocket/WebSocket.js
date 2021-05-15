@@ -8,23 +8,18 @@
  * @flow
  */
 
-'use strict';
-
-const Blob = require('Blob');
-const EventTarget = require('event-target-shim');
-const NativeEventEmitter = require('NativeEventEmitter');
-const BlobManager = require('BlobManager');
-const NativeModules = require('NativeModules');
-const Platform = require('Platform');
-const WebSocketEvent = require('WebSocketEvent');
-
-const base64 = require('base64-js');
-const binaryToBase64 = require('binaryToBase64');
-const invariant = require('invariant');
-
-const {WebSocketModule} = NativeModules;
-
-import type EventSubscription from 'EventSubscription';
+import Blob from '../Blob/Blob';
+import type {BlobData} from '../Blob/BlobTypes';
+import BlobManager from '../Blob/BlobManager';
+import NativeEventEmitter from '../EventEmitter/NativeEventEmitter';
+import binaryToBase64 from '../Utilities/binaryToBase64';
+import Platform from '../Utilities/Platform';
+import type {EventSubscription} from '../vendor/emitter/EventEmitter';
+import NativeWebSocketModule from './NativeWebSocketModule';
+import WebSocketEvent from './WebSocketEvent';
+import base64 from 'base64-js';
+import EventTarget from 'event-target-shim';
+import invariant from 'invariant';
 
 type ArrayBufferView =
   | Int8Array
@@ -51,17 +46,28 @@ const WEBSOCKET_EVENTS = ['close', 'error', 'message', 'open'];
 
 let nextWebSocketId = 0;
 
+type WebSocketEventDefinitions = {
+  websocketOpen: [{id: number, protocol: string}],
+  websocketClosed: [{id: number, code: number, reason: string}],
+  websocketMessage: [
+    | {type: 'binary', id: number, data: string}
+    | {type: 'text', id: number, data: string}
+    | {type: 'blob', id: number, data: BlobData},
+  ],
+  websocketFailed: [{id: number, message: string}],
+};
+
 /**
  * Browser-compatible WebSockets implementation.
  *
  * See https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
  * See https://github.com/websockets/ws
  */
-class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
-  static CONNECTING = CONNECTING;
-  static OPEN = OPEN;
-  static CLOSING = CLOSING;
-  static CLOSED = CLOSED;
+class WebSocket extends (EventTarget(...WEBSOCKET_EVENTS): any) {
+  static CONNECTING: number = CONNECTING;
+  static OPEN: number = OPEN;
+  static CLOSING: number = CLOSING;
+  static CLOSED: number = CLOSED;
 
   CONNECTING: number = CONNECTING;
   OPEN: number = OPEN;
@@ -69,7 +75,7 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
   CLOSED: number = CLOSED;
 
   _socketId: number;
-  _eventEmitter: NativeEventEmitter;
+  _eventEmitter: NativeEventEmitter<WebSocketEventDefinitions>;
   _subscriptions: Array<EventSubscription>;
   _binaryType: ?BinaryType;
 
@@ -84,16 +90,13 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
   readyState: number = CONNECTING;
   url: ?string;
 
-  // This module depends on the native `WebSocketModule` module. If you don't include it,
-  // `WebSocket.isAvailable` will return `false`, and WebSocket constructor will throw an error
-  static isAvailable: boolean = !!WebSocketModule;
-
   constructor(
     url: string,
     protocols: ?string | ?Array<string>,
-    options: ?{headers?: {origin?: string}},
+    options: ?{headers?: {origin?: string, ...}, ...},
   ) {
     super();
+    this.url = url;
     if (typeof protocols === 'string') {
       protocols = [protocols];
     }
@@ -101,20 +104,17 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
     const {headers = {}, ...unrecognized} = options || {};
 
     // Preserve deprecated backwards compatibility for the 'origin' option
-    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.68 was deployed. To see the error delete this
-     * comment and run Flow. */
     if (unrecognized && typeof unrecognized.origin === 'string') {
       console.warn(
         'Specifying `origin` as a WebSocket connection option is deprecated. Include it under `headers` instead.',
       );
-      /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This
-       * comment suppresses an error found when Flow v0.54 was deployed. To see
-       * the error delete this comment and run Flow. */
+      /* $FlowFixMe[prop-missing] (>=0.54.0 site=react_native_fb,react_native_
+       * oss) This comment suppresses an error found when Flow v0.54 was
+       * deployed. To see the error delete this comment and run Flow. */
       headers.origin = unrecognized.origin;
-      /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This
-       * comment suppresses an error found when Flow v0.54 was deployed. To see
-       * the error delete this comment and run Flow. */
+      /* $FlowFixMe[prop-missing] (>=0.54.0 site=react_native_fb,react_native_
+       * oss) This comment suppresses an error found when Flow v0.54 was
+       * deployed. To see the error delete this comment and run Flow. */
       delete unrecognized.origin;
     }
 
@@ -132,17 +132,14 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
       protocols = null;
     }
 
-    if (!WebSocket.isAvailable) {
-      throw new Error(
-        'Cannot initialize WebSocket module. ' +
-          'Native module WebSocketModule is missing.',
-      );
-    }
-
-    this._eventEmitter = new NativeEventEmitter(WebSocketModule);
+    this._eventEmitter = new NativeEventEmitter(
+      // T88715063: NativeEventEmitter only used this parameter on iOS. Now it uses it on all platforms, so this code was modified automatically to preserve its behavior
+      // If you want to use the native module on other platforms, please remove this condition and test its behavior
+      Platform.OS !== 'ios' ? null : NativeWebSocketModule,
+    );
     this._socketId = nextWebSocketId++;
     this._registerEvents();
-    WebSocketModule.connect(url, protocols, {headers}, this._socketId);
+    NativeWebSocketModule.connect(url, protocols, {headers}, this._socketId);
   }
 
   get binaryType(): ?BinaryType {
@@ -191,12 +188,12 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
     }
 
     if (typeof data === 'string') {
-      WebSocketModule.send(data, this._socketId);
+      NativeWebSocketModule.send(data, this._socketId);
       return;
     }
 
     if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
-      WebSocketModule.sendBinary(binaryToBase64(data), this._socketId);
+      NativeWebSocketModule.sendBinary(binaryToBase64(data), this._socketId);
       return;
     }
 
@@ -208,18 +205,14 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
       throw new Error('INVALID_STATE_ERR');
     }
 
-    WebSocketModule.ping(this._socketId);
+    NativeWebSocketModule.ping(this._socketId);
   }
 
   _close(code?: number, reason?: string): void {
-    if (Platform.OS === 'android') {
-      // See https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
-      const statusCode = typeof code === 'number' ? code : CLOSE_NORMAL;
-      const closeReason = typeof reason === 'string' ? reason : '';
-      WebSocketModule.close(statusCode, closeReason, this._socketId);
-    } else {
-      WebSocketModule.close(this._socketId);
-    }
+    // See https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+    const statusCode = typeof code === 'number' ? code : CLOSE_NORMAL;
+    const closeReason = typeof reason === 'string' ? reason : '';
+    NativeWebSocketModule.close(statusCode, closeReason, this._socketId);
 
     if (BlobManager.isAvailable && this._binaryType === 'blob') {
       BlobManager.removeWebSocketHandler(this._socketId);
@@ -253,6 +246,7 @@ class WebSocket extends EventTarget(...WEBSOCKET_EVENTS) {
           return;
         }
         this.readyState = this.OPEN;
+        this.protocol = ev.protocol;
         this.dispatchEvent(new WebSocketEvent('open'));
       }),
       this._eventEmitter.addListener('websocketClosed', ev => {

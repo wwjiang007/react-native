@@ -8,11 +8,10 @@
  */
 
 'use strict';
-
-const React = require('React');
-const StyleSheet = require('StyleSheet');
-const Text = require('Text');
-const View = require('View');
+import * as React from 'react';
+import StyleSheet from '../../StyleSheet/StyleSheet';
+import Text from '../../Text/Text';
+import View from '../View/View';
 
 class DummySegmentedControlIOS extends React.Component {
   render() {

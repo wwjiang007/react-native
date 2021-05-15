@@ -4,14 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow
+ * @flow strict-local
  * @format
  */
 
-'use strict';
-
-const DeviceEventManager = require('NativeModules').DeviceEventManager;
-const RCTDeviceEventEmitter = require('RCTDeviceEventEmitter');
+import NativeDeviceEventManager from '../../Libraries/NativeModules/specs/NativeDeviceEventManager';
+import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';
 
 const DEVICE_BACK_EVENT = 'hardwareBackPress';
 
@@ -34,10 +32,6 @@ RCTDeviceEventEmitter.addListener(DEVICE_BACK_EVENT, function() {
  *
  * Android: Detect hardware back button presses, and programmatically invoke the default back button
  * functionality to exit the app if there are no listeners or if none of the listeners return true.
- *
- * tvOS: Detect presses of the menu button on the TV remote.  (Still to be implemented:
- * programmatically disable menu button handling
- * functionality to exit the app if there are no listeners or if none of the listeners return true.)
  *
  * iOS: Not applicable.
  *
@@ -63,28 +57,31 @@ type TBackHandler = {|
   +exitApp: () => void,
   +addEventListener: (
     eventName: BackPressEventName,
-    handler: Function,
-  ) => {remove: () => void},
+    handler: () => ?boolean,
+  ) => {remove: () => void, ...},
   +removeEventListener: (
     eventName: BackPressEventName,
-    handler: Function,
+    handler: () => ?boolean,
   ) => void,
 |};
 const BackHandler: TBackHandler = {
   exitApp: function(): void {
-    DeviceEventManager.invokeDefaultBackPressHandler();
+    if (!NativeDeviceEventManager) {
+      return;
+    }
+
+    NativeDeviceEventManager.invokeDefaultBackPressHandler();
   },
 
   /**
    * Adds an event handler. Supported events:
    *
-   * - `hardwareBackPress`: Fires when the Android hardware back button is pressed or when the
-   * tvOS menu button is pressed.
+   * - `hardwareBackPress`: Fires when the Android hardware back button is pressed.
    */
   addEventListener: function(
     eventName: BackPressEventName,
-    handler: Function,
-  ): {remove: () => void} {
+    handler: () => ?boolean,
+  ): {remove: () => void, ...} {
     if (_backPressSubscriptions.indexOf(handler) === -1) {
       _backPressSubscriptions.push(handler);
     }
@@ -98,7 +95,7 @@ const BackHandler: TBackHandler = {
    */
   removeEventListener: function(
     eventName: BackPressEventName,
-    handler: Function,
+    handler: () => ?boolean,
   ): void {
     if (_backPressSubscriptions.indexOf(handler) !== -1) {
       _backPressSubscriptions.splice(

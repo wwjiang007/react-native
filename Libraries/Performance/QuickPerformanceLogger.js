@@ -35,17 +35,6 @@ const QuickPerformanceLogger = {
     }
   },
 
-  markerNote(
-    markerId: number,
-    actionId: number,
-    instanceKey: number = DUMMY_INSTANCE_KEY,
-    timestamp: number = AUTO_SET_TIMESTAMP,
-  ): void {
-    if (global.nativeQPLMarkerNote) {
-      global.nativeQPLMarkerNote(markerId, instanceKey, actionId, timestamp);
-    }
-  },
-
   markerTag(
     markerId: number,
     tag: string,
@@ -76,9 +65,7 @@ const QuickPerformanceLogger = {
     markerId: number,
     instanceKey?: number = DUMMY_INSTANCE_KEY,
   ): void {
-    if (global.nativeQPLMarkerCancel) {
-      global.nativeQPLMarkerCancel(markerId, instanceKey);
-    }
+    this.markerDrop(markerId, instanceKey);
   },
 
   markerPoint(
@@ -89,6 +76,15 @@ const QuickPerformanceLogger = {
   ): void {
     if (global.nativeQPLMarkerPoint) {
       global.nativeQPLMarkerPoint(markerId, name, instanceKey, timestamp);
+    }
+  },
+
+  markerDrop(
+    markerId: number,
+    instanceKey?: number = DUMMY_INSTANCE_KEY,
+  ): void {
+    if (global.nativeQPLMarkerDrop) {
+      global.nativeQPLMarkerDrop(markerId, instanceKey);
     }
   },
 

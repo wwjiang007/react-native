@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,34 +7,93 @@
 
 package com.facebook.react.config;
 
+import com.facebook.proguard.annotations.DoNotStripAny;
+
 /**
  * Hi there, traveller! This configuration class is not meant to be used by end-users of RN. It
  * contains mainly flags for features that are either under active development and not ready for
  * public consumption, or for use in experiments.
  *
- * These values are safe defaults and should not require manual changes.
+ * <p>These values are safe defaults and should not require manual changes.
  */
+@DoNotStripAny
 public class ReactFeatureFlags {
 
   /**
-   * Whether we should load a specific view manager immediately or when it is accessed by JS
+   * Should this application use TurboModules? If yes, then any module that inherits {@link
+   * com.facebook.react.turbomodule.core.interfaces.TurboModule} will NOT be passed in to C++
+   * CatalystInstanceImpl
    */
-  public static boolean lazilyLoadViewManagers = false;
+  public static volatile boolean useTurboModules = false;
 
   /**
-   * Reduce the number of Java-JS interops while accessing native arrays
+   * Should application use the new TM callback manager in Cxx? This is assumed to be a sane
+   * default, but it's new. We will delete once (1) we know it's safe to ship and (2) we have
+   * quantified impact.
    */
-  public static boolean useArrayNativeAccessor = false;
+  public static volatile boolean useTurboModulesRAIICallbackManager = false;
+
+  /** Should we dispatch TurboModule methods with promise returns to the NativeModules thread? */
+  public static volatile boolean enableTurboModulePromiseAsyncDispatch = false;
+
+  /** This feature flag enables logs for Fabric */
+  public static boolean enableFabricLogs = false;
 
   /**
-   * Reduce the number of Java-JS interops while accessing native maps
+   * Temporary feature flat to control a fix in the transition to layoutOnlyViews TODO T61185028:
+   * remove this when bug is fixed
    */
-  public static boolean useMapNativeAccessor = false;
+  public static boolean enableTransitionLayoutOnlyViewCleanup = false;
 
-  /**
-   * Should this application use TurboModules. If yes, then any module that inherits
-   * {@link com.facebook.react.turbomodule.core.interfaces.TurboModule} will NOT be passed in to
-   * C++ CatalystInstanceImpl
-   */
-  public static boolean useTurboModules = false;
+  /** Feature flag to configure eager initialization of Fabric */
+  public static boolean eagerInitializeFabric = false;
+
+  /** Feature flag to configure eager initialization classes of Fabric */
+  public static boolean eagerInitializeFabricClasses = false;
+
+  /** Enables Static ViewConfig in RN Android native code. */
+  public static boolean enableExperimentalStaticViewConfigs = false;
+
+  /** Enables a more aggressive cleanup during destruction of ReactContext */
+  public static boolean enableReactContextCleanupFix = false;
+
+  /** Enables JS Responder in Fabric */
+  public static boolean enableJSResponder = false;
+
+  /** Feature flag to configure eager initialization of MapBuffer So file */
+  public static boolean enableEagerInitializeMapBufferSoFile = false;
+
+  /** An interface used to compute flags on demand. */
+  public interface FlagProvider {
+    boolean get();
+  }
+
+  /** Should the RuntimeExecutor call JSIExecutor::flush()? */
+  private static FlagProvider enableRuntimeExecutorFlushingProvider = null;
+
+  public static void setEnableRuntimeExecutorFlushingFlagProvider(FlagProvider provider) {
+    enableRuntimeExecutorFlushingProvider = provider;
+  }
+
+  private static boolean mapBufferSerializationEnabled = false;
+
+  /** Enables or disables MapBuffer Serialization */
+  public static void setMapBufferSerializationEnabled(boolean enabled) {
+    mapBufferSerializationEnabled = enabled;
+  }
+
+  public static boolean isMapBufferSerializationEnabled() {
+    return mapBufferSerializationEnabled;
+  }
+
+  public static boolean enableRuntimeExecutorFlushing() {
+    if (enableRuntimeExecutorFlushingProvider != null) {
+      return enableRuntimeExecutorFlushingProvider.get();
+    }
+
+    return false;
+  }
+
+  /** Enables Fabric for LogBox */
+  public static boolean enableFabricInLogBox = false;
 }

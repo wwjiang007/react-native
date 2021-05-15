@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,49 +7,49 @@
 
 package com.facebook.react.views.switchview;
 
+import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
-/**
- * Event emitted by a ReactSwitchManager once a switch is fully switched on/off
- */
+/** Event emitted by a ReactSwitchManager once a switch is fully switched on/off */
 /*package*/ class ReactSwitchEvent extends Event<ReactSwitchEvent> {
 
-    public static final String EVENT_NAME = "topChange";
+  public static final String EVENT_NAME = "topChange";
 
-    private final boolean mIsChecked;
+  private final boolean mIsChecked;
 
-    public ReactSwitchEvent(int viewId, boolean isChecked) {
-        super(viewId);
-        mIsChecked = isChecked;
-    }
+  @Deprecated
+  public ReactSwitchEvent(int viewId, boolean isChecked) {
+    this(-1, viewId, isChecked);
+  }
 
-    public boolean getIsChecked() {
-        return mIsChecked;
-    }
+  public ReactSwitchEvent(int surfaceId, int viewId, boolean isChecked) {
+    super(surfaceId, viewId);
+    mIsChecked = isChecked;
+  }
 
-    @Override
-    public String getEventName() {
-        return EVENT_NAME;
-    }
+  public boolean getIsChecked() {
+    return mIsChecked;
+  }
 
-    @Override
-    public short getCoalescingKey() {
-        // All switch events for a given view can be coalesced.
-        return 0;
-    }
+  @Override
+  public String getEventName() {
+    return EVENT_NAME;
+  }
 
-    @Override
-    public void dispatch(RCTEventEmitter rctEventEmitter) {
-        rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
-    }
+  @Nullable
+  @Override
+  protected WritableMap getEventData() {
+    WritableMap eventData = Arguments.createMap();
+    eventData.putInt("target", getViewTag());
+    eventData.putBoolean("value", getIsChecked());
+    return eventData;
+  }
 
-    private WritableMap serializeEventData() {
-        WritableMap eventData = Arguments.createMap();
-        eventData.putInt("target", getViewTag());
-        eventData.putBoolean("value", getIsChecked());
-        return eventData;
-    }
+  @Override
+  public short getCoalescingKey() {
+    // All switch events for a given view can be coalesced.
+    return 0;
+  }
 }

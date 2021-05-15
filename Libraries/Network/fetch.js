@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict
  * @format
  */
 
@@ -11,10 +12,8 @@
 
 'use strict';
 
-const whatwg = require('whatwg-fetch');
+// side-effectful require() to put fetch,
+// Headers, Request, Response in global scope
+require('whatwg-fetch');
 
-if (whatwg && whatwg.fetch) {
-  module.exports = whatwg;
-} else {
-  module.exports = {fetch, Headers, Request, Response};
-}
+module.exports = {fetch, Headers, Request, Response};

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,22 +7,30 @@
 
 package com.facebook.react.views.swiperefresh;
 
+import androidx.annotation.Nullable;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 public class RefreshEvent extends Event<RefreshEvent> {
 
-    protected RefreshEvent(int viewTag) {
-        super(viewTag);
-    }
+  @Deprecated
+  protected RefreshEvent(int viewTag) {
+    this(-1, viewTag);
+  }
 
-    @Override
-    public String getEventName() {
-        return "topRefresh";
-    }
+  protected RefreshEvent(int surfaceId, int viewTag) {
+    super(surfaceId, viewTag);
+  }
 
-    @Override
-    public void dispatch(RCTEventEmitter rctEventEmitter) {
-        rctEventEmitter.receiveEvent(getViewTag(), getEventName(), null);
-    }
+  @Override
+  public String getEventName() {
+    return "topRefresh";
+  }
+
+  @Nullable
+  @Override
+  protected WritableMap getEventData() {
+    return Arguments.createMap();
+  }
 }

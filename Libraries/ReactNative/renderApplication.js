@@ -8,19 +8,18 @@
  * @flow
  */
 
-'use strict';
-
-const AppContainer = require('AppContainer');
-import GlobalPerformanceLogger from 'GlobalPerformanceLogger';
-import type {IPerformanceLogger} from 'createPerformanceLogger';
-import PerformanceLoggerContext from 'PerformanceLoggerContext';
-const React = require('React');
-const ReactFabricIndicator = require('ReactFabricIndicator');
+const AppContainer = require('./AppContainer');
+import GlobalPerformanceLogger from '../Utilities/GlobalPerformanceLogger';
+import type {IPerformanceLogger} from '../Utilities/createPerformanceLogger';
+import PerformanceLoggerContext from '../Utilities/PerformanceLoggerContext';
+import type {DisplayModeType} from './DisplayMode';
+import getCachedComponentWithDebugName from './getCachedComponentWithDebugName';
+const React = require('react');
 
 const invariant = require('invariant');
 
 // require BackHandler so it sets the default handler that exits the app if no listeners respond
-require('BackHandler');
+require('../Utilities/BackHandler');
 
 function renderApplication<Props: Object>(
   RootComponent: React.ComponentType<Props>,
@@ -28,45 +27,50 @@ function renderApplication<Props: Object>(
   rootTag: any,
   WrapperComponent?: ?React.ComponentType<*>,
   fabric?: boolean,
-  showFabricIndicator?: boolean,
+  showArchitectureIndicator?: boolean,
   scopedPerformanceLogger?: IPerformanceLogger,
+  isLogBox?: boolean,
+  debugName?: string,
+  displayMode?: ?DisplayModeType,
 ) {
   invariant(rootTag, 'Expect to have a valid rootTag, instead got ', rootTag);
 
+  const performanceLogger = scopedPerformanceLogger ?? GlobalPerformanceLogger;
+
   let renderable = (
-    <PerformanceLoggerContext.Provider
-      value={scopedPerformanceLogger ?? GlobalPerformanceLogger}>
-      <AppContainer rootTag={rootTag} WrapperComponent={WrapperComponent}>
+    <PerformanceLoggerContext.Provider value={performanceLogger}>
+      <AppContainer
+        rootTag={rootTag}
+        fabric={fabric}
+        showArchitectureIndicator={showArchitectureIndicator}
+        WrapperComponent={WrapperComponent}
+        initialProps={initialProps ?? Object.freeze({})}
+        internal_excludeLogBox={isLogBox}>
         <RootComponent {...initialProps} rootTag={rootTag} />
-        {fabric === true && showFabricIndicator === true ? (
-          <ReactFabricIndicator />
-        ) : null}
       </AppContainer>
     </PerformanceLoggerContext.Provider>
   );
 
-  // If the root component is async, the user probably wants the initial render
-  // to be async also. To do this, wrap AppContainer with an async marker.
-  // For more info see https://fb.me/is-component-async
-  if (
-    /* $FlowFixMe(>=0.68.0 site=react_native_fb) This comment suppresses an
-     * error found when Flow v0.68 was deployed. To see the error delete this
-     * comment and run Flow. */
-    RootComponent.prototype != null &&
-    RootComponent.prototype.unstable_isAsyncReactComponent === true
-  ) {
-    // $FlowFixMe This is not yet part of the official public API
-    const ConcurrentMode = React.unstable_ConcurrentMode;
-    renderable = <ConcurrentMode>{renderable}</ConcurrentMode>;
+  if (__DEV__ && debugName) {
+    const RootComponentWithMeaningfulName = getCachedComponentWithDebugName(
+      `${debugName}(RootComponent)`,
+    );
+    renderable = (
+      <RootComponentWithMeaningfulName>
+        {renderable}
+      </RootComponentWithMeaningfulName>
+    );
   }
 
-  GlobalPerformanceLogger.startTimespan('renderApplication_React_render');
+  performanceLogger.startTimespan('renderApplication_React_render');
+  performanceLogger.setExtra('usedReactFabric', fabric ? '1' : '0');
+
   if (fabric) {
-    require('ReactFabric').render(renderable, rootTag);
+    require('../Renderer/shims/ReactFabric').render(renderable, rootTag);
   } else {
-    require('ReactNative').render(renderable, rootTag);
+    require('../Renderer/shims/ReactNative').render(renderable, rootTag);
   }
-  GlobalPerformanceLogger.stopTimespan('renderApplication_React_render');
+  performanceLogger.stopTimespan('renderApplication_React_render');
 }
 
 module.exports = renderApplication;

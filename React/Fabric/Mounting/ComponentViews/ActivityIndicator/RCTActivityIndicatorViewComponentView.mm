@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,9 +7,13 @@
 
 #import "RCTActivityIndicatorViewComponentView.h"
 
-#import <react/components/rncore/EventEmitters.h>
-#import <react/components/rncore/Props.h>
-#import <react/components/rncore/ShadowNodes.h>
+#import <React/RCTConversions.h>
+
+#import <react/renderer/components/rncore/ComponentDescriptors.h>
+#import <react/renderer/components/rncore/EventEmitters.h>
+#import <react/renderer/components/rncore/Props.h>
+
+#import "RCTFabricComponentsPlugins.h"
 
 using namespace facebook::react;
 
@@ -29,9 +33,9 @@ static UIActivityIndicatorViewStyle convertActivityIndicatorViewStyle(const Acti
 
 #pragma mark - RCTComponentViewProtocol
 
-+ (ComponentHandle)componentHandle
++ (ComponentDescriptorProvider)componentDescriptorProvider
 {
-  return ActivityIndicatorViewShadowNode::Handle();
+  return concreteComponentDescriptorProvider<ActivityIndicatorViewComponentDescriptor>();
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -48,7 +52,7 @@ static UIActivityIndicatorViewStyle convertActivityIndicatorViewStyle(const Acti
     } else {
       [_activityIndicatorView stopAnimating];
     }
-    _activityIndicatorView.color = [UIColor colorWithCGColor:defaultProps->color.get()];
+    _activityIndicatorView.color = RCTUIColorFromSharedColor(defaultProps->color);
     _activityIndicatorView.hidesWhenStopped = defaultProps->hidesWhenStopped;
     _activityIndicatorView.activityIndicatorViewStyle = convertActivityIndicatorViewStyle(defaultProps->size);
 
@@ -58,12 +62,10 @@ static UIActivityIndicatorViewStyle convertActivityIndicatorViewStyle(const Acti
   return self;
 }
 
-- (void)updateProps:(SharedProps)props oldProps:(SharedProps)oldProps
+- (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
 {
-  const auto &oldViewProps = *std::static_pointer_cast<const ActivityIndicatorViewProps>(oldProps ?: _props);
+  const auto &oldViewProps = *std::static_pointer_cast<const ActivityIndicatorViewProps>(_props);
   const auto &newViewProps = *std::static_pointer_cast<const ActivityIndicatorViewProps>(props);
-
-  [super updateProps:props oldProps:oldProps];
 
   if (oldViewProps.animating != newViewProps.animating) {
     if (newViewProps.animating) {
@@ -73,8 +75,8 @@ static UIActivityIndicatorViewStyle convertActivityIndicatorViewStyle(const Acti
     }
   }
 
-  if (oldViewProps.color.get() != newViewProps.color.get()) {
-    _activityIndicatorView.color = [UIColor colorWithCGColor:newViewProps.color.get()];
+  if (oldViewProps.color != newViewProps.color) {
+    _activityIndicatorView.color = RCTUIColorFromSharedColor(newViewProps.color);
   }
 
   // TODO: This prop should be deprecated.
@@ -85,6 +87,13 @@ static UIActivityIndicatorViewStyle convertActivityIndicatorViewStyle(const Acti
   if (oldViewProps.size != newViewProps.size) {
     _activityIndicatorView.activityIndicatorViewStyle = convertActivityIndicatorViewStyle(newViewProps.size);
   }
+
+  [super updateProps:props oldProps:oldProps];
 }
 
 @end
+
+Class<RCTComponentViewProtocol> RCTActivityIndicatorViewCls(void)
+{
+  return RCTActivityIndicatorViewComponentView.class;
+}

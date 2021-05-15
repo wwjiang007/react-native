@@ -1,12 +1,14 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
- * directory of this source tree.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
+
 package com.facebook.react.bridge;
 
 import com.facebook.infer.annotation.Assertions;
+import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.systrace.Systrace;
 import java.util.ArrayList;
@@ -83,6 +85,9 @@ public class NativeModuleRegistry {
       for (ModuleHolder module : mModules.values()) {
         module.destroy();
       }
+      if (ReactFeatureFlags.enableReactContextCleanupFix) {
+        mModules.clear();
+      }
     } finally {
       Systrace.endSection(Systrace.TRACE_TAG_REACT_JAVA_BRIDGE);
     }
@@ -144,8 +149,8 @@ public class NativeModuleRegistry {
   }
 
   public NativeModule getModule(String name) {
-    return Assertions.assertNotNull(
-        mModules.get(name), "Could not find module with name " + name).getModule();
+    return Assertions.assertNotNull(mModules.get(name), "Could not find module with name " + name)
+        .getModule();
   }
 
   public List<NativeModule> getAllModules() {

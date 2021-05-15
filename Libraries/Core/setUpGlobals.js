@@ -4,9 +4,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow strict
  * @format
  */
+
 'use strict';
 
 /**
@@ -19,6 +20,10 @@ if (global.GLOBAL === undefined) {
 
 if (global.window === undefined) {
   global.window = global;
+}
+
+if (global.self === undefined) {
+  global.self = global;
 }
 
 // Set up process

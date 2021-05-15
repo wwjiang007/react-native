@@ -1,4 +1,4 @@
-# EditorConfig is awesome: http://EditorConfig.org
+# EditorConfig is awesome: https://EditorConfig.org
 
 # top-most EditorConfig file
 root = true
@@ -15,3 +15,7 @@ indent_size = 4
 
 [BUCK]
 indent_size = 4
+
+# Windows files
+[*.bat]
+end_of_line = crlf

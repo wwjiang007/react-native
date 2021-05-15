@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,16 +7,13 @@
 
 package com.facebook.react.uimanager;
 
+import androidx.annotation.Nullable;
 import androidx.core.util.Pools;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
-/**
- * Event used to notify JS component about changes of its position or dimensions
- */
+/** Event used to notify JS component about changes of its position or dimensions */
 public class OnLayoutEvent extends Event<OnLayoutEvent> {
 
   private static final Pools.SynchronizedPool<OnLayoutEvent> EVENTS_POOL =
@@ -24,12 +21,18 @@ public class OnLayoutEvent extends Event<OnLayoutEvent> {
 
   private int mX, mY, mWidth, mHeight;
 
+  @Deprecated
   public static OnLayoutEvent obtain(int viewTag, int x, int y, int width, int height) {
+    return obtain(-1, viewTag, x, y, width, height);
+  }
+
+  public static OnLayoutEvent obtain(
+      int surfaceId, int viewTag, int x, int y, int width, int height) {
     OnLayoutEvent event = EVENTS_POOL.acquire();
     if (event == null) {
       event = new OnLayoutEvent();
     }
-    event.init(viewTag, x, y, width, height);
+    event.init(surfaceId, viewTag, x, y, width, height);
     return event;
   }
 
@@ -38,11 +41,15 @@ public class OnLayoutEvent extends Event<OnLayoutEvent> {
     EVENTS_POOL.release(this);
   }
 
-  private OnLayoutEvent() {
+  private OnLayoutEvent() {}
+
+  @Deprecated
+  protected void init(int viewTag, int x, int y, int width, int height) {
+    init(-1, viewTag, x, y, width, height);
   }
 
-  protected void init(int viewTag, int x, int y, int width, int height) {
-    super.init(viewTag);
+  protected void init(int surfaceId, int viewTag, int x, int y, int width, int height) {
+    super.init(surfaceId, viewTag);
     mX = x;
     mY = y;
     mWidth = width;
@@ -54,8 +61,9 @@ public class OnLayoutEvent extends Event<OnLayoutEvent> {
     return "topLayout";
   }
 
+  @Nullable
   @Override
-  public void dispatch(RCTEventEmitter rctEventEmitter) {
+  protected WritableMap getEventData() {
     WritableMap layout = Arguments.createMap();
     layout.putDouble("x", PixelUtil.toDIPFromPixel(mX));
     layout.putDouble("y", PixelUtil.toDIPFromPixel(mY));
@@ -65,7 +73,6 @@ public class OnLayoutEvent extends Event<OnLayoutEvent> {
     WritableMap event = Arguments.createMap();
     event.putMap("layout", layout);
     event.putInt("target", getViewTag());
-
-    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), event);
+    return event;
   }
 }

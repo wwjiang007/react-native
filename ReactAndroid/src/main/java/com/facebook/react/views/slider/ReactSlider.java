@@ -1,16 +1,17 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
- * directory of this source tree.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
+
 package com.facebook.react.views.slider;
 
 import android.content.Context;
 import android.os.Build;
-import androidx.appcompat.widget.AppCompatSeekBar;
 import android.util.AttributeSet;
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
+import androidx.appcompat.widget.AppCompatSeekBar;
 
 /**
  * Slider that behaves more like the iOS one, for consistency.
@@ -52,7 +53,7 @@ public class ReactSlider extends AppCompatSeekBar {
     disableStateListAnimatorIfNeeded();
   }
 
-  private void disableStateListAnimatorIfNeeded() {
+  /* package */ void disableStateListAnimatorIfNeeded() {
     // We disable the state list animator for Android 6 and 7; this is a hack to prevent T37452851
     // and https://github.com/facebook/react-native/issues/9979
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M

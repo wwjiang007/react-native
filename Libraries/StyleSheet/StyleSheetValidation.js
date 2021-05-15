@@ -10,9 +10,9 @@
 
 'use strict';
 
-const DeprecatedImageStylePropTypes = require('DeprecatedImageStylePropTypes');
-const TextStylePropTypes = require('TextStylePropTypes');
-const DeprecatedViewStylePropTypes = require('DeprecatedViewStylePropTypes');
+const DeprecatedImageStylePropTypes = require('../DeprecatedPropTypes/DeprecatedImageStylePropTypes');
+const DeprecatedTextStylePropTypes = require('../DeprecatedPropTypes/DeprecatedTextStylePropTypes');
+const DeprecatedViewStylePropTypes = require('../DeprecatedPropTypes/DeprecatedViewStylePropTypes');
 
 const invariant = require('invariant');
 
@@ -51,7 +51,11 @@ class StyleSheetValidation {
     if (!__DEV__ || global.__RCTProfileIsProfiling) {
       return;
     }
-    for (const prop in styles[name]) {
+    if (!styles[name]) {
+      return;
+    }
+    const styleProps = Object.keys(styles[name]);
+    for (const prop of styleProps) {
       StyleSheetValidation.validateStyleProp(
         prop,
         styles[name],
@@ -60,9 +64,9 @@ class StyleSheetValidation {
     }
   }
 
-  /* $FlowFixMe(>=0.85.0 site=react_native_fb) This comment suppresses an error
-   * found when Flow v0.85 was deployed. To see the error, delete this comment
-   * and run Flow. */
+  /* $FlowFixMe[signature-verification-failure] (>=0.85.0 site=react_native_fb)
+   * This comment suppresses an error found when Flow v0.85 was deployed. To
+   * see the error, delete this comment and run Flow. */
   static addValidStylePropTypes(stylePropTypes) {
     if (!__DEV__ || global.__RCTProfileIsProfiling) {
       return;
@@ -89,7 +93,7 @@ const allStylePropTypes = {};
 
 if (__DEV__ && !global.__RCTProfileIsProfiling) {
   StyleSheetValidation.addValidStylePropTypes(DeprecatedImageStylePropTypes);
-  StyleSheetValidation.addValidStylePropTypes(TextStylePropTypes);
+  StyleSheetValidation.addValidStylePropTypes(DeprecatedTextStylePropTypes);
   StyleSheetValidation.addValidStylePropTypes(DeprecatedViewStylePropTypes);
 }
 

@@ -8,9 +8,13 @@
  * @emails oncall+react_native
  */
 
-'use strict';
-jest.unmock('Platform');
-const Platform = require('Platform');
+import createPerformanceLogger from '../../Utilities/createPerformanceLogger';
+
+jest.unmock('../../Utilities/Platform');
+jest.mock('../../Utilities/GlobalPerformanceLogger');
+
+const Platform = require('../../Utilities/Platform');
+const GlobalPerformanceLogger = require('../../Utilities/GlobalPerformanceLogger');
 let requestId = 1;
 
 function setRequestId(id) {
@@ -20,21 +24,28 @@ function setRequestId(id) {
   requestId = id;
 }
 
-jest.dontMock('event-target-shim').setMock('NativeModules', {
-  Networking: {
-    addListener: function() {},
-    removeListeners: function() {},
-    sendRequest(options, callback) {
-      if (typeof callback === 'function') {
-        // android does not pass a callback
-        callback(requestId);
-      }
+jest
+  .dontMock('event-target-shim')
+  .setMock('../../BatchedBridge/NativeModules', {
+    Networking: {
+      addListener: function() {},
+      removeListeners: function() {},
+      sendRequest(options, callback) {
+        if (typeof callback === 'function') {
+          // android does not pass a callback
+          callback(requestId);
+        }
+      },
+      abortRequest: function() {},
     },
-    abortRequest: function() {},
-  },
-});
+    PlatformConstants: {
+      getConstants() {
+        return {};
+      },
+    },
+  });
 
-const XMLHttpRequest = require('XMLHttpRequest');
+const XMLHttpRequest = require('../XMLHttpRequest');
 
 describe('XMLHttpRequest', function() {
   let xhr;
@@ -64,6 +75,8 @@ describe('XMLHttpRequest', function() {
     xhr.addEventListener('load', handleLoad);
     xhr.addEventListener('loadend', handleLoadEnd);
     xhr.addEventListener('readystatechange', handleReadyStateChange);
+
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -88,9 +101,16 @@ describe('XMLHttpRequest', function() {
   it('should expose responseType correctly', function() {
     expect(xhr.responseType).toBe('');
 
+    jest.spyOn(console, 'warn').mockReturnValue(undefined);
+
     // Setting responseType to an unsupported value has no effect.
     xhr.responseType = 'arrayblobbuffertextfile';
     expect(xhr.responseType).toBe('');
+
+    expect(console.warn).toBeCalledWith(
+      "The provided value 'arrayblobbuffertextfile' is not a valid 'responseType'.",
+    );
+    console.warn.mockRestore();
 
     xhr.responseType = 'arraybuffer';
     expect(xhr.responseType).toBe('arraybuffer');
@@ -223,5 +243,53 @@ describe('XMLHttpRequest', function() {
     expect(xhr.getAllResponseHeaders()).toBe(
       'Content-Type: text/plain; charset=utf-8\r\n' + 'Content-Length: 32',
     );
+  });
+
+  it('should log to GlobalPerformanceLogger if a custom performance logger is not set', () => {
+    xhr.open('GET', 'blabla');
+    xhr.send();
+
+    expect(GlobalPerformanceLogger.startTimespan).toHaveBeenCalledWith(
+      'network_XMLHttpRequest_blabla',
+    );
+    expect(GlobalPerformanceLogger.stopTimespan).not.toHaveBeenCalled();
+
+    setRequestId(8);
+    xhr.__didReceiveResponse(requestId, 200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Content-Length': '32',
+    });
+
+    expect(GlobalPerformanceLogger.stopTimespan).toHaveBeenCalledWith(
+      'network_XMLHttpRequest_blabla',
+    );
+  });
+
+  it('should log to a custom performance logger if set', () => {
+    const performanceLogger = createPerformanceLogger();
+    jest.spyOn(performanceLogger, 'startTimespan');
+    jest.spyOn(performanceLogger, 'stopTimespan');
+
+    xhr.setPerformanceLogger(performanceLogger);
+
+    xhr.open('GET', 'blabla');
+    xhr.send();
+
+    expect(performanceLogger.startTimespan).toHaveBeenCalledWith(
+      'network_XMLHttpRequest_blabla',
+    );
+    expect(GlobalPerformanceLogger.startTimespan).not.toHaveBeenCalled();
+    expect(performanceLogger.stopTimespan).not.toHaveBeenCalled();
+
+    setRequestId(9);
+    xhr.__didReceiveResponse(requestId, 200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Content-Length': '32',
+    });
+
+    expect(performanceLogger.stopTimespan).toHaveBeenCalledWith(
+      'network_XMLHttpRequest_blabla',
+    );
+    expect(GlobalPerformanceLogger.stopTimespan).not.toHaveBeenCalled();
   });
 });

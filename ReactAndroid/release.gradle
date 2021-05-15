@@ -1,7 +1,9 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 apply(plugin: "maven")
 apply(plugin: "signing")
@@ -16,18 +18,6 @@ ext {
 
 def isReleaseBuild() {
     return VERSION_NAME.contains("SNAPSHOT") == false
-}
-
-def getRepositoryUrl() {
-    return project.findProperty("repositoryUrl") ?: "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-}
-
-def getRepositoryUsername() {
-    return project.findProperty("repositoryUsername") ?: ""
-}
-
-def getRepositoryPassword() {
-    return project.findProperty("repositoryPassword") ?: ""
 }
 
 def configureReactNativePom(def pom) {
@@ -62,44 +52,19 @@ def configureReactNativePom(def pom) {
 }
 
 if (JavaVersion.current().isJava8Compatible()) {
-  allprojects {
-    tasks.withType(Javadoc) {
-      options.addStringOption("Xdoclint:none", "-quiet")
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption("Xdoclint:none", "-quiet")
+        }
     }
-  }
 }
 
 afterEvaluate { project ->
-
-    task androidJavadoc(type: Javadoc) {
-        source = android.sourceSets.main.java.srcDirs
-        classpath += files(android.bootClasspath)
-        classpath += files(project.getConfigurations().getByName("compile").asList())
-        include("**/*.java")
-        exclude("**/ReactBuildConfig.java")
-    }
-
-    task androidJavadocJar(type: Jar, dependsOn: androidJavadoc) {
-        classifier = "javadoc"
-        from(androidJavadoc.destinationDir)
-    }
-
-    task androidSourcesJar(type: Jar) {
-        classifier = "sources"
-        from(android.sourceSets.main.java.srcDirs)
-        include("**/*.java")
-    }
-
     android.libraryVariants.all { variant ->
         def name = variant.name.capitalize()
         task "jar${name}"(type: Jar, dependsOn: variant.javaCompileProvider.get()) {
             from(variant.javaCompileProvider.get().destinationDir)
         }
-    }
-
-    artifacts {
-        archives(androidSourcesJar)
-        archives(androidJavadocJar)
     }
 
     version = VERSION_NAME
@@ -108,24 +73,6 @@ afterEvaluate { project ->
     signing {
         required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
         sign(configurations.archives)
-    }
-
-    uploadArchives {
-        configuration = configurations.archives
-        repositories.mavenDeployer {
-            beforeDeployment {
-                MavenDeployment deployment -> signing.signPom(deployment)
-            }
-
-            repository(url: getRepositoryUrl()) {
-                authentication(
-                        userName: getRepositoryUsername(),
-                        password: getRepositoryPassword())
-
-            }
-
-            configureReactNativePom(pom)
-        }
     }
 
     task installArchives(type: Upload) {

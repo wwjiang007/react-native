@@ -10,14 +10,13 @@
 
 'use strict';
 
-const PickerAndroid = require('PickerAndroid');
-const PickerIOS = require('PickerIOS');
-const Platform = require('Platform');
-const React = require('React');
-const UnimplementedView = require('UnimplementedView');
+import * as React from 'react';
+import PickerAndroid from './PickerAndroid';
+import PickerIOS from './PickerIOS';
+import Platform from '../../Utilities/Platform';
+import UnimplementedView from '../UnimplementedViews/UnimplementedView';
 
-import type {TextStyleProp} from 'StyleSheet';
-import type {ColorValue} from 'StyleSheetTypes';
+import type {TextStyleProp, ColorValue} from '../../StyleSheet/StyleSheet';
 
 const MODE_DIALOG = 'dialog';
 const MODE_DROPDOWN = 'dropdown';
@@ -30,9 +29,9 @@ type PickerItemProps = $ReadOnly<{|
 
   /**
    * The value to be passed to picker's `onValueChange` callback when
-   * this item is selected. Can be a string or an integer.
+   * this item is selected.
    */
-  value?: ?(number | string),
+  value?: ?string,
 
   /**
    * Color of this item's text.
@@ -49,6 +48,7 @@ type PickerItemProps = $ReadOnly<{|
 /**
  * Individual selectable item in a Picker.
  */
+export type {PickerItem};
 class PickerItem extends React.Component<PickerItemProps> {
   render() {
     // The items are not rendered directly
@@ -61,9 +61,9 @@ type PickerProps = $ReadOnly<{|
   style?: ?TextStyleProp,
 
   /**
-   * Value matching value of one of the items. Can be a string or an integer.
+   * Value matching value of one of the items.
    */
-  selectedValue?: ?(number | string),
+  selectedValue?: ?string,
 
   /**
    * Callback for when an item is selected. This is called with the following parameters:
@@ -96,6 +96,12 @@ type PickerProps = $ReadOnly<{|
   itemStyle?: ?TextStyleProp,
 
   /**
+   * Color of the item background.
+   * @platform android
+   */
+  backgroundColor?: ColorValue,
+
+  /**
    * Prompt string for this picker, used on Android in dialog mode as the title of the dialog.
    * @platform android
    */
@@ -105,6 +111,10 @@ type PickerProps = $ReadOnly<{|
    * Used to locate this view in end-to-end tests.
    */
   testID?: ?string,
+  /**
+   * The string used for the accessibility label. Will be read once focused on the picker but not on change.
+   */
+  accessibilityLabel?: ?string,
 |}>;
 
 /**
@@ -121,28 +131,32 @@ class Picker extends React.Component<PickerProps> {
   /**
    * On Android, display the options in a dialog.
    */
-  static MODE_DIALOG = MODE_DIALOG;
+  static MODE_DIALOG: $TEMPORARY$string<'dialog'> = MODE_DIALOG;
 
   /**
    * On Android, display the options in a dropdown (this is the default).
    */
-  static MODE_DROPDOWN = MODE_DROPDOWN;
+  static MODE_DROPDOWN: $TEMPORARY$string<'dropdown'> = MODE_DROPDOWN;
 
-  static Item = PickerItem;
+  static Item: typeof PickerItem = PickerItem;
 
-  static defaultProps = {
+  static defaultProps: {|mode: $TEMPORARY$string<'dialog'>|} = {
     mode: MODE_DIALOG,
   };
 
-  render() {
+  render(): React.Node {
     if (Platform.OS === 'ios') {
-      /* $FlowFixMe(>=0.81.0 site=react_native_ios_fb) This suppression was
-       * added when renaming suppression sites. */
+      /* $FlowFixMe[prop-missing] (>=0.81.0 site=react_native_ios_fb) This
+       * suppression was added when renaming suppression sites. */
+      /* $FlowFixMe[incompatible-type] (>=0.81.0 site=react_native_ios_fb) This
+       * suppression was added when renaming suppression sites. */
       return <PickerIOS {...this.props}>{this.props.children}</PickerIOS>;
     } else if (Platform.OS === 'android') {
       return (
-        /* $FlowFixMe(>=0.81.0 site=react_native_android_fb) This suppression
-         * was added when renaming suppression sites. */
+        /* $FlowFixMe[incompatible-type] (>=0.81.0 site=react_native_android_fb) This
+         * suppression was added when renaming suppression sites. */
+        /* $FlowFixMe[prop-missing] (>=0.81.0 site=react_native_android_fb) This
+         * suppression was added when renaming suppression sites. */
         <PickerAndroid {...this.props}>{this.props.children}</PickerAndroid>
       );
     } else {

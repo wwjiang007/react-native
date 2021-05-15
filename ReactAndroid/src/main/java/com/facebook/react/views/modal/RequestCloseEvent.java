@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,18 +7,23 @@
 
 package com.facebook.react.views.modal;
 
+import androidx.annotation.Nullable;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
-/**
- * {@link Event} for dismissing a Dialog.
- */
+/** {@link Event} for dismissing a Dialog. */
 /* package */ class RequestCloseEvent extends Event<RequestCloseEvent> {
 
   public static final String EVENT_NAME = "topRequestClose";
 
+  @Deprecated
   protected RequestCloseEvent(int viewTag) {
-    super(viewTag);
+    this(-1, viewTag);
+  }
+
+  protected RequestCloseEvent(int surfaceId, int viewTag) {
+    super(surfaceId, viewTag);
   }
 
   @Override
@@ -26,8 +31,9 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
     return EVENT_NAME;
   }
 
+  @Nullable
   @Override
-  public void dispatch(RCTEventEmitter rctEventEmitter) {
-    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), null);
+  protected WritableMap getEventData() {
+    return Arguments.createMap();
   }
 }

@@ -8,12 +8,6 @@
  * @flow strict-local
  */
 
-'use strict';
+import NativeDeviceInfo from './NativeDeviceInfo';
 
-const DeviceInfo = require('NativeModules').DeviceInfo;
-
-const invariant = require('invariant');
-
-invariant(DeviceInfo, 'DeviceInfo native module is not installed correctly');
-
-module.exports = DeviceInfo;
+module.exports = NativeDeviceInfo;

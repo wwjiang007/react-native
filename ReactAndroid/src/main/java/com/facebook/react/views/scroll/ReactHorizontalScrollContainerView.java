@@ -1,18 +1,19 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 package com.facebook.react.views.scroll;
 
 import android.content.Context;
 import androidx.core.view.ViewCompat;
-import android.view.ViewGroup;
-import android.widget.HorizontalScrollView;
 import com.facebook.react.modules.i18nmanager.I18nUtil;
+import com.facebook.react.views.view.ReactViewGroup;
 
 /** Container of Horizontal scrollViews that supports RTL scrolling. */
-public class ReactHorizontalScrollContainerView extends ViewGroup {
+public class ReactHorizontalScrollContainerView extends ReactViewGroup {
 
   private int mLayoutDirection;
   private int mCurrentWidth;
@@ -20,8 +21,25 @@ public class ReactHorizontalScrollContainerView extends ViewGroup {
   public ReactHorizontalScrollContainerView(Context context) {
     super(context);
     mLayoutDirection =
-        I18nUtil.getInstance().isRTL(context) ? ViewCompat.LAYOUT_DIRECTION_RTL : ViewCompat.LAYOUT_DIRECTION_LTR;
+        I18nUtil.getInstance().isRTL(context)
+            ? ViewCompat.LAYOUT_DIRECTION_RTL
+            : ViewCompat.LAYOUT_DIRECTION_LTR;
     mCurrentWidth = 0;
+  }
+
+  @Override
+  public void setRemoveClippedSubviews(boolean removeClippedSubviews) {
+    // Clipping doesn't work well for horizontal scroll views in RTL mode - in both
+    // Fabric and non-Fabric - especially with TextInputs. The behavior you could see
+    // is TextInputs being blurred immediately after being focused. So, for now,
+    // it's easier to just disable this for these specific RTL views.
+    // TODO T86027499: support `setRemoveClippedSubviews` in RTL mode
+    if (mLayoutDirection == LAYOUT_DIRECTION_RTL) {
+      super.setRemoveClippedSubviews(false);
+      return;
+    }
+
+    super.setRemoveClippedSubviews(removeClippedSubviews);
   }
 
   @Override
@@ -35,11 +53,20 @@ public class ReactHorizontalScrollContainerView extends ViewGroup {
       setLeft(newLeft);
       setRight(newRight);
 
-      // Call with the present values in order to re-layout if necessary
-      HorizontalScrollView parent = (HorizontalScrollView) getParent();
-      // Fix the ScrollX position when using RTL language
-      int offsetX = parent.getScrollX() + getWidth() - mCurrentWidth;
-      parent.scrollTo(offsetX, parent.getScrollY());
+      /**
+       * Note: in RTL mode, *when layout width changes*, we adjust the scroll position. Practically,
+       * this means that on the first (meaningful) layout we will go from position 0 to position
+       * (right - screenWidth). In theory this means if the width of the view ever changes during
+       * layout again, scrolling could jump. Which shouldn't happen in theory, but... if you find a
+       * weird product bug that looks related, keep this in mind.
+       */
+      if (mCurrentWidth != getWidth()) {
+        // Call with the present values in order to re-layout if necessary
+        ReactHorizontalScrollView parent = (ReactHorizontalScrollView) getParent();
+        // Fix the ScrollX position when using RTL language
+        int offsetX = parent.getScrollX() + getWidth() - mCurrentWidth - parent.getWidth();
+        parent.scrollTo(offsetX, parent.getScrollY());
+      }
     }
     mCurrentWidth = getWidth();
   }

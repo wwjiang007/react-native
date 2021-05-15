@@ -6,18 +6,19 @@
  *
  * @format
  * @flow
+ * @generated SignedSource<<2d98809d55453ea61e203a8425692891>>
  */
 
 'use strict';
 
-import type {ReactNativeType} from 'ReactNativeTypes';
+import type {ReactNativeType} from './ReactNativeTypes';
 
 let ReactNative;
 
 if (__DEV__) {
-  ReactNative = require('ReactNativeRenderer-dev');
+  ReactNative = require('../implementations/ReactNativeRenderer-dev');
 } else {
-  ReactNative = require('ReactNativeRenderer-prod');
+  ReactNative = require('../implementations/ReactNativeRenderer-prod');
 }
 
 module.exports = (ReactNative: ReactNativeType);

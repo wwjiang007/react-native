@@ -11,8 +11,8 @@ rn_android_binary(
     name = "instrumentation-tests",
     keystore = KEYSTORE_TARGET,
     manifest = "AndroidManifest.xml",
+    use_split_dex = True,
     deps = [
-        react_native_dep("android_res/com/facebook/catalyst/appcompat:appcompat"),
         react_native_dep("libraries/soloader/java/com/facebook/soloader:soloader"),
         react_native_dep("third-party/java/testing-support-lib:exposed-instrumentation-api"),
         react_native_integration_tests_target("assets:assets"),

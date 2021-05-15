@@ -4,25 +4,22 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
- * This is a controlled component version of RCTDatePickerIOS
- *
  * @format
  * @flow strict-local
  */
 
-'use strict';
+// This is a controlled component version of RCTDatePickerIOS.
 
-const React = require('React');
-const StyleSheet = require('StyleSheet');
-const View = require('View');
+import * as React from 'react';
+import RCTDatePickerNativeComponent, {
+  Commands as DatePickerCommands,
+} from './RCTDatePickerNativeComponent';
+import StyleSheet from '../../StyleSheet/StyleSheet';
+import View from '../View/View';
+import invariant from 'invariant';
 
-const invariant = require('invariant');
-
-import type {ViewProps} from 'ViewPropTypes';
-import type {SyntheticEvent} from 'CoreEventTypes';
-
-const RCTDatePickerNativeComponent = require('RCTDatePickerNativeComponent');
+import type {SyntheticEvent} from '../../Types/CoreEventTypes';
+import type {ViewProps} from '../View/ViewPropTypes';
 
 type Event = SyntheticEvent<
   $ReadOnly<{|
@@ -103,6 +100,13 @@ type Props = $ReadOnly<{|
    * instance, to show times in Pacific Standard Time, pass -7 * 60.
    */
   timeZoneOffsetInMinutes?: ?number,
+
+  /**
+   * The date picker style
+   * This is only available on devices with iOS 14.0 and later.
+   * 'spinner' is the default style if this prop isn't set.
+   */
+  pickerStyle?: ?('compact' | 'spinner' | 'inline'),
 |}>;
 
 /**
@@ -113,7 +117,7 @@ type Props = $ReadOnly<{|
  * source of truth.
  */
 class DatePickerIOS extends React.Component<Props> {
-  static DefaultProps = {
+  static DefaultProps: {|mode: $TEMPORARY$string<'datetime'>|} = {
     mode: 'datetime',
   };
 
@@ -123,9 +127,7 @@ class DatePickerIOS extends React.Component<Props> {
     if (this.props.date) {
       const propsTimeStamp = this.props.date.getTime();
       if (this._picker) {
-        this._picker.setNativeProps({
-          date: propsTimeStamp,
-        });
+        DatePickerCommands.setNativeDate(this._picker, propsTimeStamp);
       }
     }
   }
@@ -135,9 +137,10 @@ class DatePickerIOS extends React.Component<Props> {
     this.props.onDateChange &&
       this.props.onDateChange(new Date(nativeTimeStamp));
     this.props.onChange && this.props.onChange(event);
+    this.forceUpdate();
   };
 
-  render() {
+  render(): React.Node {
     const props = this.props;
     invariant(
       props.date || props.initialDate,
@@ -150,7 +153,7 @@ class DatePickerIOS extends React.Component<Props> {
           ref={picker => {
             this._picker = picker;
           }}
-          style={styles.datePickerIOS}
+          style={getHeight(props.pickerStyle, props.mode)}
           date={
             props.date
               ? props.date.getTime()
@@ -175,16 +178,51 @@ class DatePickerIOS extends React.Component<Props> {
           onChange={this._onChange}
           onStartShouldSetResponder={() => true}
           onResponderTerminationRequest={() => false}
+          pickerStyle={props.pickerStyle}
         />
       </View>
     );
   }
 }
 
+const inlineHeightForDatePicker = 318.5;
+const inlineHeightForTimePicker = 49.5;
+const compactHeight = 40;
+const spinnerHeight = 216;
+
 const styles = StyleSheet.create({
   datePickerIOS: {
-    height: 216,
+    height: spinnerHeight,
+  },
+  datePickerIOSCompact: {
+    height: compactHeight,
+  },
+  datePickerIOSInline: {
+    height: inlineHeightForDatePicker + inlineHeightForTimePicker * 2,
+  },
+  datePickerIOSInlineDate: {
+    height: inlineHeightForDatePicker + inlineHeightForTimePicker,
+  },
+  datePickerIOSInlineTime: {
+    height: inlineHeightForTimePicker,
   },
 });
+
+function getHeight(pickerStyle, mode) {
+  if (pickerStyle === 'compact') {
+    return styles.datePickerIOSCompact;
+  }
+  if (pickerStyle === 'inline') {
+    switch (mode) {
+      case 'date':
+        return styles.datePickerIOSInlineDate;
+      case 'time':
+        return styles.datePickerIOSInlineTime;
+      default:
+        return styles.datePickerIOSInline;
+    }
+  }
+  return styles.datePickerIOS;
+}
 
 module.exports = DatePickerIOS;

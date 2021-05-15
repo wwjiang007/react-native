@@ -4,19 +4,19 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
- * Resolves an asset into a `source` for `Image`.
- *
  * @format
  * @flow
  */
 
+// Resolves an asset into a `source` for `Image`.
+
 'use strict';
 
-const AssetRegistry = require('AssetRegistry');
-const AssetSourceResolver = require('AssetSourceResolver');
+const AssetRegistry = require('@react-native/assets/registry');
+const AssetSourceResolver = require('./AssetSourceResolver');
+const {pickScale} = require('./AssetUtils');
 
-import type {ResolvedAssetSource} from 'AssetSourceResolver';
+import type {ResolvedAssetSource} from './AssetSourceResolver';
 
 let _customSourceTransformer, _serverURL, _scriptURL;
 
@@ -29,10 +29,9 @@ function getSourceCodeScriptURL(): ?string {
   let sourceCode =
     global.nativeExtensions && global.nativeExtensions.SourceCode;
   if (!sourceCode) {
-    const NativeModules = require('NativeModules');
-    sourceCode = NativeModules && NativeModules.SourceCode;
+    sourceCode = require('../NativeModules/specs/NativeSourceCode').default;
   }
-  _sourceCodeScriptURL = sourceCode.scriptURL;
+  _sourceCodeScriptURL = sourceCode.getConstants().scriptURL;
   return _sourceCodeScriptURL;
 }
 
@@ -107,5 +106,5 @@ function resolveAssetSource(source: any): ?ResolvedAssetSource {
 }
 
 module.exports = resolveAssetSource;
-module.exports.pickScale = AssetSourceResolver.pickScale;
+module.exports.pickScale = pickScale;
 module.exports.setCustomSourceTransformer = setCustomSourceTransformer;
